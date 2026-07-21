@@ -22,10 +22,8 @@ namespace SeedVr.Remote
             _httpClient.BaseAddress = new Uri(Constants.VastAi.ApiBaseUrl);
             _httpClient.Timeout = TimeSpan.FromSeconds(appSettings.HttpTimeoutSeconds);
 
-            if (!string.IsNullOrWhiteSpace(appSettings.VastAiApiKey))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", appSettings.VastAiApiKey);
-            }
+            // VastAiApiKey is [Required], so it is always present here.
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", appSettings.VastAiApiKey);
         }
 
         /// <summary>The instance as Vast.ai currently reports it, or null when the account has no instance with that id.</summary>

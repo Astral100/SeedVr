@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
@@ -49,7 +50,12 @@ namespace SeedVr.Remote
             {
                 instance = await _vastAiClient.GetInstance(_appSettings.VastAiInstanceId, cancellationToken);
             }
-            catch (HttpRequestException ex)
+            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError("Timed out after {Seconds}s reading instance details from the Vast.ai API.", _appSettings.HttpTimeoutSeconds);
+                return null;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
                 _logger.LogError(ex, "Failed to read instance details from the Vast.ai API");
                 return null;
@@ -91,6 +97,11 @@ namespace SeedVr.Remote
                 _logger.LogInformation("ComfyUI is reachable. /system_stats response: {Stats}", stats);
                 return true;
             }
+            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError("Timed out after {Seconds}s waiting for the ComfyUI instance. It may still be starting up.", _appSettings.HttpTimeoutSeconds);
+                return false;
+            }
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Failed to reach ComfyUI instance");
@@ -112,7 +123,12 @@ namespace SeedVr.Remote
                 _logger.LogError("The instance has no '{Folder}' models folder. Is the SeedVR2 node pack installed?", Constants.ComfyUi.SeedVrModelFolder);
                 return false;
             }
-            catch (HttpRequestException ex)
+            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError("Timed out after {Seconds}s reading the installed models from the instance.", _appSettings.HttpTimeoutSeconds);
+                return false;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
                 _logger.LogError(ex, "Failed to read the installed models from the instance");
                 return false;

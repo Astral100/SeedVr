@@ -21,12 +21,12 @@ namespace SeedVr.Console
             }
             catch (Exception ex)
             {
-                // The host may have failed to build, in which case there is no logger yet.
+                // No logger means the host itself failed to build, so this really was startup.
                 var logger = app?.Services.GetService<ILogger<Program>>();
 
                 if (logger != null)
                 {
-                    logger.LogError(ex, "Startup failed");
+                    logger.LogError(ex, "Unexpected failure");
                 }
                 else
                 {
