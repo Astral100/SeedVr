@@ -8,20 +8,31 @@ namespace SeedVr.Console
 {
     public class Program
     {
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            var app = CreateHostApp();
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            WebApplication app = null;
 
             try
             {
+                app = CreateHostApp();
                 var runner = app.Services.GetRequiredService<SeedVrJobRunner>();
-                await runner.RunAsync();
+                return await runner.Run() ? 0 : 1;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Startup failed");
-                Environment.ExitCode = 1;
+                // The host may have failed to build, in which case there is no logger yet.
+                var logger = app?.Services.GetService<ILogger<Program>>();
+
+                if (logger != null)
+                {
+                    logger.LogError(ex, "Startup failed");
+                }
+                else
+                {
+                    System.Console.Error.WriteLine($"Startup failed: {ex.Message}");
+                }
+
+                return 1;
             }
         }
 

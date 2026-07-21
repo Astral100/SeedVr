@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="appsettings.*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\workflows\*.json" Link="workflows\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
