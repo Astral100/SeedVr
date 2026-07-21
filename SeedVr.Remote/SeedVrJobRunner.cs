@@ -2,40 +2,92 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Remote.Models;
 
 namespace SeedVr.Remote
 {
     public class SeedVrJobRunner
     {
         private readonly ComfyUiClient _comfyUiClient;
+        private readonly VastAiClient _vastAiClient;
         private readonly AppSettings _appSettings;
         private readonly ILogger<SeedVrJobRunner> _logger;
 
-        public SeedVrJobRunner(ComfyUiClient comfyUiClient, IOptions<AppSettings> appSettingsOptions, ILogger<SeedVrJobRunner> logger)
+        public SeedVrJobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions, ILogger<SeedVrJobRunner> logger)
         {
             _comfyUiClient = comfyUiClient;
+            _vastAiClient = vastAiClient;
             _appSettings = appSettingsOptions.Value;
             _logger = logger;
         }
 
-        /// <summary>Returns true when the instance is running and ready to process the configured job.</summary>
         public async Task<bool> Run(CancellationToken cancellationToken = default)
         {
-            if (!await CheckInstanceIsRunning(cancellationToken))
+            var vastInstanceAddress = await GetVastInstanceAddress(cancellationToken);
+            if (vastInstanceAddress == null)
             {
                 return false;
             }
 
-            return await CheckInstanceIsReady(cancellationToken);
+            var isComfyUiRunning = await IsComfyUiRunning(vastInstanceAddress, cancellationToken);
+            if (!isComfyUiRunning)
+            {
+                return false;
+            }
+
+            var isComfyUiReady = await IsComfyUiReady(vastInstanceAddress, cancellationToken);
+            return isComfyUiReady;
         }
 
-        private async Task<bool> CheckInstanceIsRunning(CancellationToken cancellationToken)
+        /// <summary>The instance's current ComfyUI address, or null when it could not be resolved.</summary>
+        private async Task<string> GetVastInstanceAddress(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Resolving address of Vast.ai instance {InstanceId}...", _appSettings.VastAiInstanceId);
+
+            VastAiInstance instance;
+            try
+            {
+                instance = await _vastAiClient.GetInstance(_appSettings.VastAiInstanceId, cancellationToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Failed to read instance details from the Vast.ai API");
+                return null;
+            }
+
+            if (instance == null)
+            {
+                _logger.LogError("Vast.ai reports no instance {InstanceId} on this account.", _appSettings.VastAiInstanceId);
+                return null;
+            }
+
+            if (instance.ActualStatus != Constants.VastAi.RunningStatus)
+            {
+                _logger.LogError("Vast.ai instance {InstanceId} is '{Status}', but 'running' status is expected.", instance.Id, instance.ActualStatus);
+                return null;
+            }
+
+            var hostPort = instance.Ports?.ComfyUi?.FirstOrDefault()?.HostPort;
+
+            if (string.IsNullOrWhiteSpace(instance.PublicIpAddress) || string.IsNullOrWhiteSpace(hostPort))
+            {
+                _logger.LogError("Vast.ai instance {InstanceId} does not expose {Port}. Is ComfyUI running on it?", instance.Id, Constants.VastAi.ComfyUiContainerPort);
+                return null;
+            }
+
+            var vastInstanceAddress = $"http://{instance.PublicIpAddress}:{hostPort}/";
+            _logger.LogInformation("Vast.ai instance {InstanceId} is running at {Address}", instance.Id, vastInstanceAddress);
+
+            return vastInstanceAddress;
+        }
+
+        private async Task<bool> IsComfyUiRunning(string vastInstanceAddress, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Checking ComfyUI instance health (GET /system_stats)...");
 
             try
             {
-                var stats = await _comfyUiClient.GetSystemStats(cancellationToken);
+                var stats = await _comfyUiClient.GetSystemStats(vastInstanceAddress, cancellationToken);
                 _logger.LogInformation("ComfyUI is reachable. /system_stats response: {Stats}", stats);
                 return true;
             }
@@ -46,14 +98,14 @@ namespace SeedVr.Remote
             }
         }
 
-        private async Task<bool> CheckInstanceIsReady(CancellationToken cancellationToken)
+        private async Task<bool> IsComfyUiReady(string vastInstanceAddress, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Checking downloaded models on instance (GET /models/{Folder}). DiT: {DitModel}, VAE: {VaeModel}", Constants.ComfyUi.SeedVrModelFolder, _appSettings.DitModel, _appSettings.VaeModel);
 
             IReadOnlyList<string> installedModels;
             try
             {
-                installedModels = await _comfyUiClient.GetInstalledModels(Constants.ComfyUi.SeedVrModelFolder, cancellationToken);
+                installedModels = await _comfyUiClient.GetInstalledModels(vastInstanceAddress, Constants.ComfyUi.SeedVrModelFolder, cancellationToken);
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
@@ -68,13 +120,12 @@ namespace SeedVr.Remote
 
             _logger.LogInformation("Models downloaded on instance ({Count}): {Models}", installedModels.Count, string.Join(", ", installedModels));
 
-            // Case-sensitive: the instance is Linux, and these names are submitted verbatim in the workflow.
             var ditInstalled = installedModels.Contains(_appSettings.DitModel);
             var vaeInstalled = installedModels.Contains(_appSettings.VaeModel);
 
             if (ditInstalled && vaeInstalled)
             {
-                _logger.LogInformation("Instance is ready: the selected DiT and VAE models are both downloaded.");
+                _logger.LogInformation("Instance is ready: selected DiT and VAE models are both downloaded.");
                 return true;
             }
 

@@ -6,19 +6,20 @@ namespace SeedVr.Core
     {
         public const string ConfigurationSection = "AppSettings";
 
-        [Required, Url]
-        public string ComfyUiBaseUrl { get; set; } // should end with "/"
+        // Vast.ai account API key (console.vast.ai/manage-keys). The ComfyUI address is resolved from
+        // the instance's current port mapping, because Vast.ai reassigns the external port on every start.
+        [Required]
+        public string VastAiApiKey { get; set; }
 
-        public string ComfyUiWebSocketUrl { get; set; }
+        [Range(1, int.MaxValue)]
+        public int VastAiInstanceId { get; set; }
 
         // Vast.ai instance portal token (OPEN_BUTTON_TOKEN); sent as "Authorization: Bearer <token>".
         // Leave empty for an unauthenticated instance. Keep real values out of the tracked appsettings.json.
         public string AuthToken { get; set; }
 
-        public string WorkflowTemplatePath { get; set; }
+        // The video to upscale.
         public string InputVideoPath { get; set; }
-        public string OutputDirectory { get; set; }
-        public string JobRootPrefix { get; set; }
 
         // Model files the job should run with; verified against the instance before submitting.
         [Required]
