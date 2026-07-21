@@ -11,7 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SeedVr.Remote\SeedVr.Remote.csproj" />
+    <ProjectReference Include="..\SeedVr.Core\SeedVr.Core.csproj" />
   </ItemGroup>
 
 </Project>
