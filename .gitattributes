@@ -1,0 +1,33 @@
+# Normalize line endings: LF in the repo, native in the working tree.
+* text=auto
+
+# Explicit text types
+*.cs        text diff=csharp
+*.csproj    text
+*.sln       text eol=crlf
+*.json      text
+*.md        text
+*.yml       text
+*.yaml      text
+*.xml       text
+*.config    text
+
+# Scripts keep their platform's endings
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+*.sh        text eol=lf
+
+# Binary — never diff or convert
+*.mp4       binary
+*.mkv       binary
+*.mov       binary
+*.webm      binary
+*.png       binary
+*.jpg       binary
+*.safetensors binary
+*.pth       binary
+*.ckpt      binary
+*.dll       binary
+*.exe       binary
+*.pdb       binary

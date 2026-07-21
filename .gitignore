@@ -1,0 +1,126 @@
+## .NET / Visual Studio
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+
+# Visual Studio cache / user-specific files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# VS Code (keep shared settings, drop personal ones)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/*
+!packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+TestResults/
+
+# MSBuild / build server
+*.binlog
+*.tlog
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Publish output
+[Pp]ublish/
+*.publishsettings
+*.azurePubxml
+*.pubxml
+*.publishproj
+PublishScripts/
+
+# IIS Express / web
+.vs/**/config/applicationhost.config
+
+# ReSharper / StyleCop
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+StyleCopReport.xml
+
+# Roslyn cache
+*.ide/
+.localhistory/
+.mfractor/
+*.cache
+
+## Secrets & local configuration
+# appsettings.json itself is tracked as a template — keep real keys
+# (Vast.ai tokens, ComfyUI endpoints, etc.) in the files below.
+appsettings.*.json
+!appsettings.Development.json.example
+appsettings.local.json
+secrets.json
+*.secret
+*.secrets
+.env
+.env.*
+!.env.example
+*.pfx
+*.key
+*.pem
+
+## Project media
+# Sample clips and upscaled renders are large binaries — keep them local.
+videos/input/*
+videos/output/*
+!videos/**/.gitkeep
+
+## OS noise
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.lnk
