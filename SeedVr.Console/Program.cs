@@ -2,6 +2,7 @@ using SeedVr.Remote;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SeedVr.Core;
 
 namespace SeedVr.Console
@@ -43,14 +44,19 @@ namespace SeedVr.Console
 
             builder.Services.AddOptions<AppSettings>()
                 .BindConfiguration(AppSettings.ConfigurationSection)
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+                .ValidateDataAnnotations();
 
             builder.Services.AddHttpClient<ComfyUiClient>();
             builder.Services.AddHttpClient<VastAiClient>();
             builder.Services.AddTransient<SeedVrJobRunner>();
 
-            return builder.Build();
+            var app = builder.Build();
+
+            // Settings are validated when they are first read, so read them here rather than
+            // letting an invalid value surface partway through a job.
+            _ = app.Services.GetRequiredService<IOptions<AppSettings>>().Value;
+
+            return app;
         }
     }
 }
