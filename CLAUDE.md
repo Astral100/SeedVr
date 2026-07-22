@@ -25,6 +25,7 @@ another project - disagrees with it, follow this file and say so rather than res
 - Do not run `dotnet build`/`run`/`test` after every small change. Batch small edits and verify once, or not at all when the change is trivially safe.
 - Build for substantial changes only: a new class, a refactor across several methods or files, or a behaviour change worth verifying.
 - Always push after committing. Do not wait to be asked.
+- Do not prefix shell commands with `cd` or `Set-Location`. Use absolute paths where a path is needed.
 
 ## Documents
 
