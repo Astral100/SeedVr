@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="appsettings.*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="appsettings.*.json" CopyToOutputDirectory="PreserveNewest" DependentUpon="appsettings.json" />
     <None Include="..\workflows\*.json" Link="workflows\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

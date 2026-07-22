@@ -123,11 +123,12 @@ namespace SeedVr.Remote
                 _logger.LogError("The instance has no '{Folder}' models folder. Is the SeedVR2 node pack installed?", Constants.ComfyUi.SeedVrModelFolder);
                 return false;
             }
-            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogError("Timed out after {Seconds}s reading the installed models from the instance.", _appSettings.HttpTimeoutSeconds);
-                return false;
-            }
+            // Restore once GetInstalledModels sets a deadline of its own; today the call cannot time out.
+            //catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            //{
+            //    _logger.LogError("Timed out after {Seconds}s reading the installed models from the instance.", _appSettings.HttpTimeoutSeconds);
+            //    return false;
+            //}
             catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
                 _logger.LogError(ex, "Failed to read the installed models from the instance");
