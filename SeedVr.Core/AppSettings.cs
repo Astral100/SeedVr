@@ -14,8 +14,10 @@ namespace SeedVr.Core
         [Range(1, int.MaxValue)]
         public int VastAiInstanceId { get; set; }
 
-        // Vast.ai instance portal token (OPEN_BUTTON_TOKEN); sent as "Authorization: Bearer <token>".
-        // Leave empty for an unauthenticated instance. Keep real values out of the tracked appsettings.json.
+        // The instance's WEB_PASSWORD, set as a template env var when the instance is created; sent as
+        // "Authorization: Bearer <token>" to the Caddy proxy that fronts ComfyUI. Unlike OPEN_BUTTON_TOKEN
+        // it is a value you choose and stays stable across restarts. Keep the real value in
+        // appsettings.Development.json, not the tracked appsettings.json.
         public string AuthToken { get; set; }
 
         // The video to upscale.
