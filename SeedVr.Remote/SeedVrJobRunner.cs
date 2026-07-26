@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Logger;
 using SeedVr.Remote.Models;
 
 namespace SeedVr.Remote
@@ -12,14 +12,12 @@ namespace SeedVr.Remote
         private readonly ComfyUiClient _comfyUiClient;
         private readonly VastAiClient _vastAiClient;
         private readonly AppSettings _appSettings;
-        private readonly ILogger<SeedVrJobRunner> _logger;
 
-        public SeedVrJobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions, ILogger<SeedVrJobRunner> logger)
+        public SeedVrJobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
             _vastAiClient = vastAiClient;
             _appSettings = appSettingsOptions.Value;
-            _logger = logger;
         }
 
         public async Task<bool> Run(CancellationToken cancellationToken = default)
@@ -32,7 +30,7 @@ namespace SeedVr.Remote
 
             if (runningInstances.Count == 0)
             {
-                _logger.LogError("The Vast.ai account has no running instance to run the job on.");
+                Log.Error("The Vast.ai account has no running instance to run the job on.");
                 return false;
             }
 
@@ -42,14 +40,14 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            _logger.LogInformation("Vast.ai instance {InstanceId} is ready to run the job.", availableInstance.Id);
+            Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
             return true;
         }
 
         /// <summary>The account's running instances, or null when Vast.ai could not be read.</summary>
         private async Task<IReadOnlyList<VastAiInstance>> GetRunningInstances(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Reading the instances on the Vast.ai account...");
+            Log.Information("Reading the instances on the Vast.ai account...");
 
             IReadOnlyList<VastAiInstance> instances;
             try
@@ -58,17 +56,17 @@ namespace SeedVr.Remote
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogError("Timed out after {Seconds}s reading the instances from the Vast.ai API.", _appSettings.HttpTimeoutSeconds);
+                Log.Error("Timed out after {Seconds}s reading the instances from the Vast.ai API.", [_appSettings.HttpTimeoutSeconds]);
                 return null;
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
-                _logger.LogError(ex, "Failed to read the instances from the Vast.ai API");
+                Log.Error(ex, "Failed to read the instances from the Vast.ai API");
                 return null;
             }
 
             var runningInstances = instances.Where(instance => instance.ActualStatus == Constants.VastAi.RunningStatus).ToList();
-            _logger.LogInformation("Vast.ai reports {RunningCount} running instance(s) of {TotalCount} on the account.", runningInstances.Count, instances.Count);
+            Log.Information("Vast.ai reports {RunningCount} running instance(s) of {TotalCount} on the account.", [runningInstances.Count, instances.Count]);
 
             return runningInstances;
         }
@@ -80,7 +78,7 @@ namespace SeedVr.Remote
 
             foreach (var instance in instances)
             {
-                _logger.LogInformation("Evaluating if Vast.ai instance {InstanceId} is available for processing...", instance.Id);
+                Log.Information("Evaluating if Vast.ai instance {InstanceId} is available for processing...", [instance.Id]);
 
                 var availability = await GetInstanceState(instance, cancellationToken);
                 if (availability == InstanceState.Available)
@@ -88,7 +86,7 @@ namespace SeedVr.Remote
                     return instance;
                 }
 
-                _logger.LogWarning("Vast.ai instance {InstanceId} is {Availability}.", instance.Id, availability);
+                Log.Warning("Vast.ai instance {InstanceId} is {Availability}.", [instance.Id, availability]);
                 unavailableInstances.Add(availability);
             }
 
@@ -105,11 +103,11 @@ namespace SeedVr.Remote
 
             if (faultedCount == 0)
             {
-                _logger.LogWarning("No instance is free yet: {BusyCount} busy, {ProvisioningCount} still provisioning. Try again shortly.", busyCount, provisioningCount);
+                Log.Warning("No instance is free yet: {BusyCount} busy, {ProvisioningCount} still provisioning. Try again shortly.", [busyCount, provisioningCount]);
                 return;
             }
 
-            _logger.LogError("No instance is available: {FaultedCount} faulted and need attention, {BusyCount} busy, {ProvisioningCount} still provisioning.", faultedCount, busyCount, provisioningCount);
+            Log.Error("No instance is available: {FaultedCount} faulted and need attention, {BusyCount} busy, {ProvisioningCount} still provisioning.", [faultedCount, busyCount, provisioningCount]);
         }
 
         /// <summary>Runs the checks in order, stopping at the first one the instance fails.</summary>
@@ -154,11 +152,11 @@ namespace SeedVr.Remote
             // time, while a mapping that skips ComfyUI's port is how the instance was created.
             if (string.IsNullOrWhiteSpace(instance.PublicIpAddress) || otherPortCount == 0)
             {
-                _logger.LogWarning("Vast.ai instance {InstanceId} has not published its address and ports yet.", instance.Id);
+                Log.Warning("Vast.ai instance {InstanceId} has not published its address and ports yet.", [instance.Id]);
                 return InstanceState.Provisioning;
             }
 
-            _logger.LogWarning("Vast.ai instance {InstanceId} publishes {OtherPortCount} port(s), but not {Port}. Was it created from a template that exposes ComfyUI?", instance.Id, otherPortCount, Constants.VastAi.ComfyUiContainerPort);
+            Log.Warning("Vast.ai instance {InstanceId} publishes {OtherPortCount} port(s), but not {Port}. Was it created from a template that exposes ComfyUI?", [instance.Id, otherPortCount, Constants.VastAi.ComfyUiContainerPort]);
             return InstanceState.Faulted;
         }
 
@@ -166,7 +164,7 @@ namespace SeedVr.Remote
         private string GetComfyUiAddress(VastAiInstance instance)
         {
             var comfyUiAddress = $"http://{instance.PublicIpAddress}:{GetComfyUiHostPort(instance)}/";
-            _logger.LogInformation("Vast.ai instance {InstanceId} is running at {Address}", instance.Id, comfyUiAddress);
+            Log.Information("Vast.ai instance {InstanceId} is running at {Address}", [instance.Id, comfyUiAddress]);
 
             return comfyUiAddress;
         }
@@ -179,36 +177,36 @@ namespace SeedVr.Remote
 
         private async Task<InstanceState> IsComfyUiReachable(string comfyUiAddress, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Checking ComfyUI instance health (GET /system_stats)...");
+            Log.Information("Checking ComfyUI instance health (GET /system_stats)...");
 
             try
             {
                 var stats = await _comfyUiClient.GetSystemStats(comfyUiAddress, cancellationToken);
-                _logger.LogInformation("ComfyUI is reachable. /system_stats response: {Stats}", stats);
+                Log.Information("ComfyUI is reachable. /system_stats response: {Stats}", [stats]);
                 return InstanceState.Available;
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning("Timed out after {Seconds}s waiting for the ComfyUI instance. It may still be starting up.", _appSettings.HttpTimeoutSeconds);
+                Log.Warning("Timed out after {Seconds}s waiting for the ComfyUI instance. It may still be starting up.", [_appSettings.HttpTimeoutSeconds]);
                 return InstanceState.Provisioning;
             }
             // A status code means ComfyUI answered and refused; without one the connection itself failed,
             // which is what a container that has not finished starting looks like.
             catch (HttpRequestException ex) when (ex.StatusCode == null)
             {
-                _logger.LogWarning("ComfyUI is not answering on the instance yet: {Reason}", ex.Message);
+                Log.Warning("ComfyUI is not answering on the instance yet: {Reason}", [ex.Message]);
                 return InstanceState.Provisioning;
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogWarning("ComfyUI refused the health check with StatusCode {StatusCode}", ex.StatusCode);
+                Log.Warning("ComfyUI refused the health check with StatusCode {StatusCode}", [ex.StatusCode]);
                 return InstanceState.Faulted;
             }
         }
 
         private async Task<InstanceState> ValidateModelsDownloaded(string comfyUiAddress, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Checking downloaded models on instance (GET /models/{Folder}). DiT: {DitModel}, VAE: {VaeModel}", Constants.ComfyUi.SeedVrModelFolder, _appSettings.DitModel, _appSettings.VaeModel);
+            Log.Information("Checking downloaded models on instance (GET /models/{Folder}). DiT: {DitModel}, VAE: {VaeModel}", [Constants.ComfyUi.SeedVrModelFolder, _appSettings.DitModel, _appSettings.VaeModel]);
 
             IReadOnlyList<string> installedModels;
             try
@@ -217,40 +215,40 @@ namespace SeedVr.Remote
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogWarning("The instance has no '{Folder}' models folder. Is the SeedVR2 node pack installed?", Constants.ComfyUi.SeedVrModelFolder);
+                Log.Warning("The instance has no '{Folder}' models folder. Is the SeedVR2 node pack installed?", [Constants.ComfyUi.SeedVrModelFolder]);
                 return InstanceState.Faulted;
             }
             // Restore once GetInstalledModels sets a deadline of its own; today the call cannot time out.
             //catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             //{
-            //    _logger.LogWarning("Timed out after {Seconds}s reading the installed models from the instance.", _appSettings.HttpTimeoutSeconds);
+            //    Log.Warning("Timed out after {Seconds}s reading the installed models from the instance.", [_appSettings.HttpTimeoutSeconds]);
             //    return InstanceState.Faulted;
             //}
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
-                _logger.LogWarning(ex, "Failed to read the installed models from the instance");
+                Log.Warning(ex, "Failed to read the installed models from the instance");
                 return InstanceState.Faulted;
             }
 
-            _logger.LogInformation("Models downloaded on instance ({Count}): {Models}", installedModels.Count, string.Join(", ", installedModels));
+            Log.Information("Models downloaded on instance ({Count}): {Models}", [installedModels.Count, string.Join(", ", installedModels)]);
 
             var ditInstalled = installedModels.Contains(_appSettings.DitModel);
             var vaeInstalled = installedModels.Contains(_appSettings.VaeModel);
 
             if (ditInstalled && vaeInstalled)
             {
-                _logger.LogInformation("Selected DiT and VAE models are both downloaded.");
+                Log.Information("Selected DiT and VAE models are both downloaded.");
                 return InstanceState.Available;
             }
 
             if (!ditInstalled)
             {
-                _logger.LogWarning("DiT model {DitModel} is not downloaded on the instance.", _appSettings.DitModel);
+                Log.Warning("DiT model {DitModel} is not downloaded on the instance.", [_appSettings.DitModel]);
             }
 
             if (!vaeInstalled)
             {
-                _logger.LogWarning("VAE model {VaeModel} is not downloaded on the instance.", _appSettings.VaeModel);
+                Log.Warning("VAE model {VaeModel} is not downloaded on the instance.", [_appSettings.VaeModel]);
             }
 
             // The folder is there, so the node pack is installed and the models may still be downloading.
@@ -260,7 +258,7 @@ namespace SeedVr.Remote
         /// <summary>Whether the ComfyUI instance is free, so the job is not queued behind work already running on it.</summary>
         private async Task<InstanceState> IsComfyUiAvailable(string comfyUiAddress, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Checking the ComfyUI job queue (GET /prompt)...");
+            Log.Information("Checking the ComfyUI job queue (GET /prompt)...");
 
             int? jobQueueLength;
             try
@@ -269,28 +267,28 @@ namespace SeedVr.Remote
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning("Timed out after {Seconds}s reading the job queue length from the ComfyUI instance.", _appSettings.HttpTimeoutSeconds);
+                Log.Warning("Timed out after {Seconds}s reading the job queue length from the ComfyUI instance.", [_appSettings.HttpTimeoutSeconds]);
                 return InstanceState.Faulted;
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
-                _logger.LogWarning(ex, "Failed to read the job queue from ComfyUI instance");
+                Log.Warning(ex, "Failed to read the job queue from ComfyUI instance");
                 return InstanceState.Faulted;
             }
 
             if (jobQueueLength == null)
             {
-                _logger.LogWarning("The ComfyUI instance did not report its job queue length, so it cannot be treated as available.");
+                Log.Warning("The ComfyUI instance did not report its job queue length, so it cannot be treated as available.");
                 return InstanceState.Faulted;
             }
 
             if (jobQueueLength > 0)
             {
-                _logger.LogInformation("The instance is busy: {QueueLength} job(s) queued or running.", jobQueueLength);
+                Log.Information("The instance is busy: {QueueLength} job(s) queued or running.", [jobQueueLength]);
                 return InstanceState.Busy;
             }
 
-            _logger.LogInformation("The ComfyUI job queue is empty.");
+            Log.Information("The ComfyUI job queue is empty.");
             return InstanceState.Available;
         }
     }

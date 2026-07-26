@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Logger;
 
 namespace SeedVr.Console
 {
@@ -11,36 +12,33 @@ namespace SeedVr.Console
     {
         static async Task<int> Main(string[] args)
         {
-            WebApplication app = null;
+            LogRegister.CreateLogger();
 
             try
             {
-                app = CreateHostApp();
+                var app = CreateHostApp();
                 var runner = app.Services.GetRequiredService<SeedVrJobRunner>();
                 var isInstanceReady = await runner.Run();
                 return isInstanceReady ? 0 : 1;
             }
             catch (Exception ex)
             {
-                // No logger means the host itself failed to build, so this really was startup.
-                var logger = app?.Services.GetService<ILogger<Program>>();
-
-                if (logger != null)
-                {
-                    logger.LogError(ex, "Unexpected failure");
-                }
-                else
-                {
-                    System.Console.Error.WriteLine($"Startup failed: {ex.Message}");
-                }
-
+                Log.Error(ex, "Unexpected failure");
                 return 1;
+            }
+            finally
+            {
+                // The file sink buffers, so the tail of the run is lost without this.
+                LogRegister.DisposeLogger();
             }
         }
 
         private static WebApplication CreateHostApp()
         {
             var builder = WebApplication.CreateBuilder();
+
+            // Logging goes through Serilog, so the built-in console provider would only duplicate the output.
+            builder.Logging.ClearProviders();
 
             builder.Services.AddOptions<AppSettings>()
                 .BindConfiguration(AppSettings.ConfigurationSection)

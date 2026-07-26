@@ -6,6 +6,9 @@ namespace SeedVr.Core
     {
         public const string ConfigurationSection = "AppSettings";
 
+        // Both secrets live in user secrets, not in any appsettings file: dotnet user-secrets set
+        // "AppSettings:VastAiApiKey" "<value>". They are read automatically in the Development environment.
+
         // Vast.ai account API key (console.vast.ai/manage-keys). The ComfyUI address is resolved from
         // the instance's current port mapping, because Vast.ai reassigns the external port on every start.
         [Required]
@@ -13,8 +16,8 @@ namespace SeedVr.Core
 
         // The instance's WEB_PASSWORD, set as a template env var when the instance is created; sent as
         // "Authorization: Bearer <token>" to the Caddy proxy that fronts ComfyUI. Unlike OPEN_BUTTON_TOKEN
-        // it is a value you choose and stays stable across restarts. Keep the real value in
-        // appsettings.Development.json, not the tracked appsettings.json.
+        // it is a value you choose and stays stable across restarts.
+        [Required]
         public string AuthToken { get; set; }
 
         // The video to upscale.

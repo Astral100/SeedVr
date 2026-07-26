@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SeedVr.Core\SeedVr.Core.csproj" />
+    <ProjectReference Include="..\SeedVr.Logger\SeedVr.Logger.csproj" />
   </ItemGroup>
 
   <ItemGroup>

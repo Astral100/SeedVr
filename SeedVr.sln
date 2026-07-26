@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeedVr.Core", "SeedVr.Core\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeedVr.Remote.Tests", "SeedVr.Remote.Tests\SeedVr.Remote.Tests.csproj", "{BAD0914D-3FB3-4005-AF1A-45D84F3C0264}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeedVr.Logger", "SeedVr.Logger\SeedVr.Logger.csproj", "{6E6AFEF3-3DFB-60BF-BB67-58A528983879}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{BAD0914D-3FB3-4005-AF1A-45D84F3C0264}.Release|x64.Build.0 = Release|Any CPU
 		{BAD0914D-3FB3-4005-AF1A-45D84F3C0264}.Release|x86.ActiveCfg = Release|Any CPU
 		{BAD0914D-3FB3-4005-AF1A-45D84F3C0264}.Release|x86.Build.0 = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|x64.Build.0 = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Debug|x86.Build.0 = Debug|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|x64.ActiveCfg = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|x64.Build.0 = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|x86.ActiveCfg = Release|Any CPU
+		{6E6AFEF3-3DFB-60BF-BB67-58A528983879}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

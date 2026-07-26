@@ -122,6 +122,8 @@ videos/output/*
 .github/copilot-instructions.md
 # Per-machine Claude Code permissions; .claude/settings.json is shared and stays tracked.
 .claude/settings.local.json
+# Crash dumps Git Bash writes into the working directory when it faults.
+*.stackdump
 
 ## OS noise
 Thumbs.db

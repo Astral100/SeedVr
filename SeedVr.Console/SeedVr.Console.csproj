@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>04995bd9-5082-426c-bcbe-83c424e710da</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SeedVr.Logger\SeedVr.Logger.csproj" />
     <ProjectReference Include="..\SeedVr.Remote\SeedVr.Remote.csproj" />
     <ProjectReference Include="..\SeedVr.Core\SeedVr.Core.csproj" />
   </ItemGroup>
