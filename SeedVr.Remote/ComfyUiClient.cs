@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Remote.Models;
 
 namespace SeedVr.Remote
 {
@@ -32,12 +33,24 @@ namespace SeedVr.Remote
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(_controlTimeout);
 
-            return await _httpClient.GetStringAsync($"{baseUrl}system_stats", timeoutSource.Token);
+            var systemStats = await _httpClient.GetStringAsync($"{baseUrl}system_stats", timeoutSource.Token);
+            return systemStats;
         }
 
         public async Task<IReadOnlyList<string>> GetInstalledModels(string baseUrl, string folder, CancellationToken cancellationToken = default)
         {
-            return await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}models/{folder}", cancellationToken) ?? [];
+            var installedModels = await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}models/{folder}", cancellationToken);
+            return installedModels ?? [];
+        }
+
+        /// <summary>Jobs queued plus the one running, or null when ComfyUI did not report it. Zero means the instance is free.</summary>
+        public async Task<int?> GetComfyUiQueueLength(string baseUrl, CancellationToken cancellationToken = default)
+        {
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_controlTimeout);
+
+            var status = await _httpClient.GetFromJsonAsync<ComfyUiPromptStatus>($"{baseUrl}prompt", timeoutSource.Token);
+            return status?.ExecInfo?.QueueRemaining;
         }
     }
 }

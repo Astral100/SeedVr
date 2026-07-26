@@ -26,11 +26,11 @@ namespace SeedVr.Remote
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", appSettings.VastAiApiKey);
         }
 
-        /// <summary>The instance as Vast.ai currently reports it, or null when the account has no instance with that id.</summary>
-        public async Task<VastAiInstance> GetInstance(int instanceId, CancellationToken cancellationToken = default)
+        /// <summary>Every instance on the account, as Vast.ai currently reports them.</summary>
+        public async Task<IReadOnlyList<VastAiInstance>> GetInstances(CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.GetFromJsonAsync<VastAiResponse>(Constants.VastAi.InstancesPath, cancellationToken);
-            return response?.Instances?.FirstOrDefault(instance => instance.Id == instanceId);
+            return response?.Instances ?? [];
         }
     }
 }

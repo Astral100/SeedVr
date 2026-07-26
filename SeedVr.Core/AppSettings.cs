@@ -11,9 +11,6 @@ namespace SeedVr.Core
         [Required]
         public string VastAiApiKey { get; set; }
 
-        [Range(1, int.MaxValue)]
-        public int VastAiInstanceId { get; set; }
-
         // The instance's WEB_PASSWORD, set as a template env var when the instance is created; sent as
         // "Authorization: Bearer <token>" to the Caddy proxy that fronts ComfyUI. Unlike OPEN_BUTTON_TOKEN
         // it is a value you choose and stays stable across restarts. Keep the real value in
