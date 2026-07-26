@@ -33,13 +33,13 @@ namespace SeedVr.Remote
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(_controlTimeout);
 
-            var systemStats = await _httpClient.GetStringAsync($"{baseUrl}system_stats", timeoutSource.Token);
+            var systemStats = await _httpClient.GetStringAsync($"{baseUrl}{Constants.ComfyUi.SystemStatsPath}", timeoutSource.Token);
             return systemStats;
         }
 
         public async Task<IReadOnlyList<string>> GetInstalledModels(string baseUrl, string folder, CancellationToken cancellationToken = default)
         {
-            var installedModels = await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}models/{folder}", cancellationToken);
+            var installedModels = await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}{Constants.ComfyUi.ModelsPath}/{folder}", cancellationToken);
             return installedModels ?? [];
         }
 
@@ -49,7 +49,7 @@ namespace SeedVr.Remote
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(_controlTimeout);
 
-            var status = await _httpClient.GetFromJsonAsync<ComfyUiPromptStatus>($"{baseUrl}prompt", timeoutSource.Token);
+            var status = await _httpClient.GetFromJsonAsync<ComfyUiPromptStatus>($"{baseUrl}{Constants.ComfyUi.PromptPath}", timeoutSource.Token);
             return status?.ExecInfo?.QueueRemaining;
         }
     }

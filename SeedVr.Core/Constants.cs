@@ -4,6 +4,12 @@
     {
         public static class ComfyUi
         {
+            public const string SystemStatsPath = "system_stats";
+            public const string ModelsPath = "models";
+
+            // Reports the queue depth on GET, and takes a workflow on POST.
+            public const string PromptPath = "prompt";
+
             public const string SeedVrModelFolder = "seedvr2";
 
             // Namespaces each job's uploads and outputs on the instance.
