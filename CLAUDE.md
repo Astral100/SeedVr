@@ -24,7 +24,8 @@ another project - disagrees with it, follow this file and say so rather than res
 
 ## Workflow
 
-- Read `PLAN.md` before answering what is done or what is next, and update it in the same commit as the work it describes.
+- Read `PLAN.md` before answering what is done or what is next.
+- Update `PLAN.md` with the latest project state on every change that affects the plan.
 - Do not run `dotnet build`/`run`/`test` after every small change. Batch small edits and verify once, or not at all when the change is trivially safe.
 - Build for substantial changes only: a new class, a refactor across several methods or files, or a behaviour change worth verifying.
 - Never commit without confirming first. Reverting, editing, or building a change is not a request to commit it.

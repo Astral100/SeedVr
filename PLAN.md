@@ -14,8 +14,6 @@ Still to be built: `SeedVrWorkflowBuilder` (clones and patches the API workflow 
 Milestone 2 is complete and verified live against a real instance on 28/07/2026. Milestone 3 is next,
 starting with a check of the node IDs in the workflow JSON.
 
-Uncommitted: `InstanceState` moved into `SeedVr.Remote/Models/`.
-
 ## Milestones
 
 | # | Milestone | Status |
