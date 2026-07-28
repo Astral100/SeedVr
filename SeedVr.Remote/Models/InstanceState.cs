@@ -1,4 +1,4 @@
-namespace SeedVr.Remote
+namespace SeedVr.Remote.Models
 {
     /// <summary>Why an instance can or cannot take the job. Everything but Faulted clears on its own.</summary>
     public enum InstanceState
