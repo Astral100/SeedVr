@@ -124,6 +124,8 @@ videos/output/*
 .claude/settings.local.json
 # Crash dumps Git Bash writes into the working directory when it faults.
 *.stackdump
+# Superseded plan and memory snapshots, kept locally for reference only.
+docs/history/
 
 ## OS noise
 Thumbs.db
