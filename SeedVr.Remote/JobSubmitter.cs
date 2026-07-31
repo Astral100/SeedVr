@@ -52,6 +52,12 @@ namespace SeedVr.Remote
                 return false;
             }
 
+            if (submitResult == null)
+            {
+                Log.Error("ComfyUI returned no usable response to the submission.");
+                return false;
+            }
+
             if (submitResult.NodeErrors != null && submitResult.NodeErrors.Count > 0)
             {
                 LogNodeErrors(submitResult.NodeErrors);

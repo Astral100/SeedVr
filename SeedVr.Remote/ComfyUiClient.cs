@@ -41,7 +41,10 @@ namespace SeedVr.Remote
 
         public async Task<IReadOnlyList<string>> GetInstalledModels(string baseUrl, string folder, CancellationToken cancellationToken = default)
         {
-            var installedModels = await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}{Constants.ComfyUi.ModelsPath}/{folder}", cancellationToken);
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_controlTimeout);
+
+            var installedModels = await _httpClient.GetFromJsonAsync<List<string>>($"{baseUrl}{Constants.ComfyUi.ModelsPath}/{folder}", timeoutSource.Token);
             return installedModels ?? [];
         }
 
@@ -91,10 +94,11 @@ namespace SeedVr.Remote
 
             var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{Constants.ComfyUi.PromptPath}", request, cancellationToken);
 
-            // ComfyUI rejects an invalid workflow with 400 and a body carrying node_errors; read that body
-            // instead of throwing, so the caller can report which node was refused. Any other non-success
-            // status has no such body, so surface it as an exception.
-            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.BadRequest)
+            // ComfyUI rejects an invalid workflow with 400 and a JSON body carrying node_errors; read that
+            // body instead of throwing, so the caller can report which node was refused. A 400 from the proxy
+            // (bad auth) is not JSON, and any other non-success status has no such body, so surface those.
+            var isNodeRejection = response.StatusCode == HttpStatusCode.BadRequest && response.Content.Headers.ContentType?.MediaType == "application/json";
+            if (!response.IsSuccessStatusCode && !isNodeRejection)
             {
                 response.EnsureSuccessStatusCode();
             }

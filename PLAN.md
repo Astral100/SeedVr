@@ -76,10 +76,8 @@ Wrapper submit:
 
 ## Milestone 7 - timeouts and progress
 
-Only `GetSystemStats` and `GetComfyUiQueueLength` carry a deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`.
+The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. The transfer calls still need theirs.
 
-- Give the remaining control calls the same linked-`CancellationTokenSource` deadline.
-- Uncomment the timeout catch in `JobRunner.ValidateModelsDownloaded` once `GetInstalledModels` has one.
 - Give transfers an idle deadline: re-arm `CancelAfter` on each chunk, so a stall fails fast while a long transfer does not.
 - Report progress from the same tick that re-arms the timer.
 - Upload: wrap the `FileStream` in a counting `Stream`; the total comes from the file length.
