@@ -23,6 +23,11 @@ namespace SeedVr.Core
         // The video to upscale.
         public string InputVideoPath { get; set; }
 
+        // The on-instance ComfyUI API wrapper's base URL, read only by the wrapper submit path. It runs on a
+        // different port than ComfyUI, so it is not derived from the instance's ComfyUI address. Include the
+        // trailing slash. Optional: the raw path does not use it.
+        public string WrapperBaseUrl { get; set; }
+
         // Model files the job should run with; verified against the instance before submitting.
         [Required]
         public string DitModel { get; set; }

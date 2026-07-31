@@ -6,19 +6,23 @@ using SeedVr.Logger;
 using SeedVr.Remote.Models;
 using SeedVr.Remote.Models.ComfyUi;
 using SeedVr.Remote.Models.VastAi;
+using SeedVr.Remote.Models.Workflow;
+using SeedVr.Remote.Models.Wrapper;
 
 namespace SeedVr.Remote
 {
     public class JobRunner
     {
         private readonly ComfyUiClient _comfyUiClient;
+        private readonly ComfyWrapperClient _comfyWrapperClient;
         private readonly VastAiClient _vastAiClient;
         private readonly WorkflowBuilder _workflowBuilder;
         private readonly AppSettings _appSettings;
 
-        public JobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, ComfyWrapperClient comfyWrapperClient, VastAiClient vastAiClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
+            _comfyWrapperClient = comfyWrapperClient;
             _vastAiClient = vastAiClient;
             _workflowBuilder = workflowBuilder;
             _appSettings = appSettingsOptions.Value;
@@ -47,7 +51,10 @@ namespace SeedVr.Remote
             Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
 
             var comfyUiAddress = BuildComfyUiAddress(availableInstance);
+
+            // Raw and wrapper submit paths are both available; comment one and uncomment the other to switch.
             var submitted = await SubmitRawJob(comfyUiAddress, cancellationToken);
+            // var submitted = await SubmitWrapperJob(comfyUiAddress, cancellationToken);
 
             return submitted;
         }
@@ -307,14 +314,14 @@ namespace SeedVr.Remote
             return InstanceState.Available;
         }
 
-        /// <summary>Uploads the input video, patches the workflow onto it and submits it to ComfyUI over the raw protocol.</summary>
-        private async Task<bool> SubmitRawJob(string comfyUiAddress, CancellationToken cancellationToken)
+        /// <summary>Resolves the input video, uploads it through raw ComfyUI and builds the patched workflow, or null on failure.</summary>
+        private async Task<SeedVrWorkflow> PrepareWorkflow(string comfyUiAddress, CancellationToken cancellationToken)
         {
             var configuredPath = _appSettings.InputVideoPath;
             if (string.IsNullOrWhiteSpace(configuredPath))
             {
                 Log.Error("No input video is configured. Set AppSettings:InputVideoPath to the video to upscale.");
-                return false;
+                return null;
             }
 
             // videos/ is not copied to the output directory, so the path resolves against the working directory, not the app base.
@@ -322,7 +329,7 @@ namespace SeedVr.Remote
             if (!File.Exists(localVideoPath))
             {
                 Log.Error("The input video was not found at '{Path}'. Check AppSettings:InputVideoPath and the working directory.", [localVideoPath]);
-                return false;
+                return null;
             }
 
             ComfyUiUploadResult upload;
@@ -334,13 +341,25 @@ namespace SeedVr.Remote
             catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
                 Log.Error(ex, "Failed to upload the input video to the instance");
-                return false;
+                return null;
             }
 
             Log.Information("Uploaded the input video; ComfyUI stored it as {Name}.", [upload.Name]);
 
             var outputFilenamePrefix = Path.GetFileNameWithoutExtension(localVideoPath);
             var workflow = _workflowBuilder.Build(upload.Name, outputFilenamePrefix);
+
+            return workflow;
+        }
+
+        /// <summary>Uploads, builds and submits the workflow to ComfyUI over the raw protocol.</summary>
+        private async Task<bool> SubmitRawJob(string comfyUiAddress, CancellationToken cancellationToken)
+        {
+            var workflow = await PrepareWorkflow(comfyUiAddress, cancellationToken);
+            if (workflow == null)
+            {
+                return false;
+            }
 
             // The client id ties this submission to the progress broadcast a milestone 4 WebSocket will attach to.
             var clientId = Guid.NewGuid().ToString();
@@ -364,6 +383,38 @@ namespace SeedVr.Remote
             }
 
             Log.Information("Submitted the job to ComfyUI. prompt_id {PromptId}, client_id {ClientId}.", [submitResult.PromptId, clientId]);
+            return true;
+        }
+
+        /// <summary>Uploads through raw ComfyUI, then submits the same workflow to the on-instance API wrapper instead of /prompt.</summary>
+        private async Task<bool> SubmitWrapperJob(string comfyUiAddress, CancellationToken cancellationToken)
+        {
+            var wrapperBaseUrl = _appSettings.WrapperBaseUrl;
+            if (string.IsNullOrWhiteSpace(wrapperBaseUrl))
+            {
+                Log.Error("No wrapper address is configured. Set AppSettings:WrapperBaseUrl to the on-instance wrapper URL.");
+                return false;
+            }
+
+            var workflow = await PrepareWorkflow(comfyUiAddress, cancellationToken);
+            if (workflow == null)
+            {
+                return false;
+            }
+
+            WrapperResult result;
+            try
+            {
+                Log.Information("Submitting the workflow to the API wrapper (POST /generate) at {WrapperBaseUrl}...", [wrapperBaseUrl]);
+                result = await _comfyWrapperClient.Generate(wrapperBaseUrl, workflow, cancellationToken);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
+            {
+                Log.Error(ex, "Failed to submit the workflow to the API wrapper");
+                return false;
+            }
+
+            Log.Information("Submitted the job to the API wrapper. request_id {RequestId}, status {Status}.", [result.Id, result.Status]);
             return true;
         }
 
