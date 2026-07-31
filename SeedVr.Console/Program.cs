@@ -45,7 +45,9 @@ namespace SeedVr.Console
                 .ValidateDataAnnotations();
 
             builder.Services.AddHttpClient<ComfyUiClient>();
+            builder.Services.AddHttpClient<ComfyWrapperClient>();
             builder.Services.AddHttpClient<VastAiClient>();
+            builder.Services.AddTransient<SeedVrWorkflowBuilder>();
             builder.Services.AddTransient<SeedVrJobRunner>();
 
             var app = builder.Build();

@@ -1,0 +1,1697 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ComfyUI API Wrapper",
+    "description": "FastAPI wrapper for ComfyUI with queue management",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/generate": {
+      "post": {
+        "summary": "Generate",
+        "description": "Submit a new generation request (async)",
+        "operationId": "generate_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Payload"
+              },
+              "examples": {
+                "Raw Image To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "dpmpp_2m",
+                            "scheduler": "normal",
+                            "denoise": 0.87,
+                            "model": [
+                              "14",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "12",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "photograph of victorian woman with wings, sky clouds, meadow grass",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "watermark, text",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "image",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        },
+                        "10": {
+                          "inputs": {
+                            "image": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/refs/heads/master/input/example.png",
+                            "choose file to upload": "image"
+                          },
+                          "class_type": "LoadImage"
+                        },
+                        "12": {
+                          "inputs": {
+                            "pixels": [
+                              "10",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEEncode"
+                        },
+                        "14": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Raw Text To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "euler",
+                            "scheduler": "normal",
+                            "denoise": 1,
+                            "model": [
+                              "4",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "5",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "4": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        },
+                        "5": {
+                          "inputs": {
+                            "width": 512,
+                            "height": 512,
+                            "batch_size": 1
+                          },
+                          "class_type": "EmptyLatentImage"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "beautiful scenery nature glass bottle landscape, purple galaxy bottle",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "text, watermark",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "4",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "ComfyUI",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Text2image Modifier": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "modifier": "Text2Image",
+                      "modifications": {
+                        "prompt": "A beautiful sunset over mountains, photorealistic",
+                        "negative_prompt": "blurry, low quality",
+                        "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors",
+                        "seed": "__RANDOM_INT__",
+                        "steps": 20,
+                        "cfg_scale": 8,
+                        "width": 512,
+                        "height": 512,
+                        "sampler_name": "dpmpp_2m"
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {
+                          "user_id": "12345",
+                          "project_id": "abc-def"
+                        }
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Seedvr2 Hd Video Upscale": {
+                  "value": {
+                    "input": {
+                      "workflow_json": {
+                        "10": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "resolution": 1080,
+                            "max_resolution": 0,
+                            "batch_size": 33,
+                            "uniform_batch_size": true,
+                            "color_correction": "lab",
+                            "temporal_overlap": 3,
+                            "prepend_frames": 0,
+                            "input_noise_scale": 0,
+                            "latent_noise_scale": 0,
+                            "offload_device": "cpu",
+                            "enable_debug": false,
+                            "image": [
+                              "22",
+                              0
+                            ],
+                            "dit": [
+                              "14",
+                              0
+                            ],
+                            "vae": [
+                              "13",
+                              0
+                            ]
+                          },
+                          "class_type": "SeedVR2VideoUpscaler",
+                          "_meta": {
+                            "title": "SeedVR2 Video Upscaler (v2.5.24)"
+                          }
+                        },
+                        "13": {
+                          "inputs": {
+                            "model": "ema_vae_fp16.safetensors",
+                            "device": "cuda:0",
+                            "encode_tiled": true,
+                            "encode_tile_size": 1024,
+                            "encode_tile_overlap": 128,
+                            "decode_tiled": true,
+                            "decode_tile_size": 768,
+                            "decode_tile_overlap": 128,
+                            "tile_debug": "false",
+                            "offload_device": "cpu",
+                            "cache_model": false
+                          },
+                          "class_type": "SeedVR2LoadVAEModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load VAE Model"
+                          }
+                        },
+                        "14": {
+                          "inputs": {
+                            "model": "seedvr2_ema_3b_fp16.safetensors",
+                            "device": "cuda:0",
+                            "blocks_to_swap": 32,
+                            "swap_io_components": false,
+                            "offload_device": "cpu",
+                            "cache_model": false,
+                            "attention_mode": "sdpa"
+                          },
+                          "class_type": "SeedVR2LoadDiTModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load DiT Model"
+                          }
+                        },
+                        "21": {
+                          "inputs": {
+                            "file": "Mustache_640x360.mp4"
+                          },
+                          "class_type": "LoadVideo",
+                          "_meta": {
+                            "title": "Load Video"
+                          }
+                        },
+                        "22": {
+                          "inputs": {
+                            "video": [
+                              "21",
+                              0
+                            ]
+                          },
+                          "class_type": "GetVideoComponents",
+                          "_meta": {
+                            "title": "Get Video Components"
+                          }
+                        },
+                        "23": {
+                          "inputs": {
+                            "filename_prefix": "video/ComfyUI",
+                            "format": "auto",
+                            "codec": "auto",
+                            "video": [
+                              "24",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveVideo",
+                          "_meta": {
+                            "title": "Save Video"
+                          }
+                        },
+                        "24": {
+                          "inputs": {
+                            "bit_depth": 8,
+                            "images": [
+                              "10",
+                              0
+                            ],
+                            "fps": [
+                              "22",
+                              2
+                            ],
+                            "audio": [
+                              "22",
+                              1
+                            ]
+                          },
+                          "class_type": "CreateVideo",
+                          "_meta": {
+                            "title": "Create Video"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate/sync": {
+      "post": {
+        "summary": "Generate Sync",
+        "operationId": "generate_sync_generate_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Payload"
+              },
+              "examples": {
+                "Raw Image To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "dpmpp_2m",
+                            "scheduler": "normal",
+                            "denoise": 0.87,
+                            "model": [
+                              "14",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "12",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "photograph of victorian woman with wings, sky clouds, meadow grass",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "watermark, text",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "image",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        },
+                        "10": {
+                          "inputs": {
+                            "image": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/refs/heads/master/input/example.png",
+                            "choose file to upload": "image"
+                          },
+                          "class_type": "LoadImage"
+                        },
+                        "12": {
+                          "inputs": {
+                            "pixels": [
+                              "10",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEEncode"
+                        },
+                        "14": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Raw Text To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "euler",
+                            "scheduler": "normal",
+                            "denoise": 1,
+                            "model": [
+                              "4",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "5",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "4": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        },
+                        "5": {
+                          "inputs": {
+                            "width": 512,
+                            "height": 512,
+                            "batch_size": 1
+                          },
+                          "class_type": "EmptyLatentImage"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "beautiful scenery nature glass bottle landscape, purple galaxy bottle",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "text, watermark",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "4",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "ComfyUI",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Text2image Modifier": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "modifier": "Text2Image",
+                      "modifications": {
+                        "prompt": "A beautiful sunset over mountains, photorealistic",
+                        "negative_prompt": "blurry, low quality",
+                        "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors",
+                        "seed": "__RANDOM_INT__",
+                        "steps": 20,
+                        "cfg_scale": 8,
+                        "width": 512,
+                        "height": 512,
+                        "sampler_name": "dpmpp_2m"
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {
+                          "user_id": "12345",
+                          "project_id": "abc-def"
+                        }
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Seedvr2 Hd Video Upscale": {
+                  "value": {
+                    "input": {
+                      "workflow_json": {
+                        "10": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "resolution": 1080,
+                            "max_resolution": 0,
+                            "batch_size": 33,
+                            "uniform_batch_size": true,
+                            "color_correction": "lab",
+                            "temporal_overlap": 3,
+                            "prepend_frames": 0,
+                            "input_noise_scale": 0,
+                            "latent_noise_scale": 0,
+                            "offload_device": "cpu",
+                            "enable_debug": false,
+                            "image": [
+                              "22",
+                              0
+                            ],
+                            "dit": [
+                              "14",
+                              0
+                            ],
+                            "vae": [
+                              "13",
+                              0
+                            ]
+                          },
+                          "class_type": "SeedVR2VideoUpscaler",
+                          "_meta": {
+                            "title": "SeedVR2 Video Upscaler (v2.5.24)"
+                          }
+                        },
+                        "13": {
+                          "inputs": {
+                            "model": "ema_vae_fp16.safetensors",
+                            "device": "cuda:0",
+                            "encode_tiled": true,
+                            "encode_tile_size": 1024,
+                            "encode_tile_overlap": 128,
+                            "decode_tiled": true,
+                            "decode_tile_size": 768,
+                            "decode_tile_overlap": 128,
+                            "tile_debug": "false",
+                            "offload_device": "cpu",
+                            "cache_model": false
+                          },
+                          "class_type": "SeedVR2LoadVAEModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load VAE Model"
+                          }
+                        },
+                        "14": {
+                          "inputs": {
+                            "model": "seedvr2_ema_3b_fp16.safetensors",
+                            "device": "cuda:0",
+                            "blocks_to_swap": 32,
+                            "swap_io_components": false,
+                            "offload_device": "cpu",
+                            "cache_model": false,
+                            "attention_mode": "sdpa"
+                          },
+                          "class_type": "SeedVR2LoadDiTModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load DiT Model"
+                          }
+                        },
+                        "21": {
+                          "inputs": {
+                            "file": "Mustache_640x360.mp4"
+                          },
+                          "class_type": "LoadVideo",
+                          "_meta": {
+                            "title": "Load Video"
+                          }
+                        },
+                        "22": {
+                          "inputs": {
+                            "video": [
+                              "21",
+                              0
+                            ]
+                          },
+                          "class_type": "GetVideoComponents",
+                          "_meta": {
+                            "title": "Get Video Components"
+                          }
+                        },
+                        "23": {
+                          "inputs": {
+                            "filename_prefix": "video/ComfyUI",
+                            "format": "auto",
+                            "codec": "auto",
+                            "video": [
+                              "24",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveVideo",
+                          "_meta": {
+                            "title": "Save Video"
+                          }
+                        },
+                        "24": {
+                          "inputs": {
+                            "bit_depth": 8,
+                            "images": [
+                              "10",
+                              0
+                            ],
+                            "fps": [
+                              "22",
+                              2
+                            ],
+                            "audio": [
+                              "22",
+                              1
+                            ]
+                          },
+                          "class_type": "CreateVideo",
+                          "_meta": {
+                            "title": "Create Video"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate/stream": {
+      "post": {
+        "summary": "Generate Stream",
+        "description": "Submit a request and stream status updates until completion",
+        "operationId": "generate_stream_generate_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Payload"
+              },
+              "examples": {
+                "Raw Image To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "dpmpp_2m",
+                            "scheduler": "normal",
+                            "denoise": 0.87,
+                            "model": [
+                              "14",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "12",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "photograph of victorian woman with wings, sky clouds, meadow grass",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "watermark, text",
+                            "clip": [
+                              "14",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "image",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        },
+                        "10": {
+                          "inputs": {
+                            "image": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/refs/heads/master/input/example.png",
+                            "choose file to upload": "image"
+                          },
+                          "class_type": "LoadImage"
+                        },
+                        "12": {
+                          "inputs": {
+                            "pixels": [
+                              "10",
+                              0
+                            ],
+                            "vae": [
+                              "14",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEEncode"
+                        },
+                        "14": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Raw Text To Image": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "workflow_json": {
+                        "3": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "steps": 20,
+                            "cfg": 8,
+                            "sampler_name": "euler",
+                            "scheduler": "normal",
+                            "denoise": 1,
+                            "model": [
+                              "4",
+                              0
+                            ],
+                            "positive": [
+                              "6",
+                              0
+                            ],
+                            "negative": [
+                              "7",
+                              0
+                            ],
+                            "latent_image": [
+                              "5",
+                              0
+                            ]
+                          },
+                          "class_type": "KSampler"
+                        },
+                        "4": {
+                          "inputs": {
+                            "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors"
+                          },
+                          "class_type": "CheckpointLoaderSimple"
+                        },
+                        "5": {
+                          "inputs": {
+                            "width": 512,
+                            "height": 512,
+                            "batch_size": 1
+                          },
+                          "class_type": "EmptyLatentImage"
+                        },
+                        "6": {
+                          "inputs": {
+                            "text": "beautiful scenery nature glass bottle landscape, purple galaxy bottle",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "7": {
+                          "inputs": {
+                            "text": "text, watermark",
+                            "clip": [
+                              "4",
+                              1
+                            ]
+                          },
+                          "class_type": "CLIPTextEncode"
+                        },
+                        "8": {
+                          "inputs": {
+                            "samples": [
+                              "3",
+                              0
+                            ],
+                            "vae": [
+                              "4",
+                              2
+                            ]
+                          },
+                          "class_type": "VAEDecode"
+                        },
+                        "9": {
+                          "inputs": {
+                            "filename_prefix": "ComfyUI",
+                            "images": [
+                              "8",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveImage"
+                        }
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {}
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Text2image Modifier": {
+                  "value": {
+                    "input": {
+                      "request_id": "",
+                      "modifier": "Text2Image",
+                      "modifications": {
+                        "prompt": "A beautiful sunset over mountains, photorealistic",
+                        "negative_prompt": "blurry, low quality",
+                        "ckpt_name": "v1-5-pruned-emaonly-fp16.safetensors",
+                        "seed": "__RANDOM_INT__",
+                        "steps": 20,
+                        "cfg_scale": 8,
+                        "width": 512,
+                        "height": 512,
+                        "sampler_name": "dpmpp_2m"
+                      },
+                      "s3": {
+                        "access_key_id": "",
+                        "secret_access_key": "",
+                        "endpoint_url": "",
+                        "bucket_name": "",
+                        "region": ""
+                      },
+                      "webhook": {
+                        "url": "",
+                        "secret": "REPLACE_WITH_YOUR_WEBHOOK_SECRET",
+                        "extra_params": {
+                          "user_id": "12345",
+                          "project_id": "abc-def"
+                        }
+                      },
+                      "return_outputs_as_base64": false
+                    }
+                  }
+                },
+                "Seedvr2 Hd Video Upscale": {
+                  "value": {
+                    "input": {
+                      "workflow_json": {
+                        "10": {
+                          "inputs": {
+                            "seed": "__RANDOM_INT__",
+                            "resolution": 1080,
+                            "max_resolution": 0,
+                            "batch_size": 33,
+                            "uniform_batch_size": true,
+                            "color_correction": "lab",
+                            "temporal_overlap": 3,
+                            "prepend_frames": 0,
+                            "input_noise_scale": 0,
+                            "latent_noise_scale": 0,
+                            "offload_device": "cpu",
+                            "enable_debug": false,
+                            "image": [
+                              "22",
+                              0
+                            ],
+                            "dit": [
+                              "14",
+                              0
+                            ],
+                            "vae": [
+                              "13",
+                              0
+                            ]
+                          },
+                          "class_type": "SeedVR2VideoUpscaler",
+                          "_meta": {
+                            "title": "SeedVR2 Video Upscaler (v2.5.24)"
+                          }
+                        },
+                        "13": {
+                          "inputs": {
+                            "model": "ema_vae_fp16.safetensors",
+                            "device": "cuda:0",
+                            "encode_tiled": true,
+                            "encode_tile_size": 1024,
+                            "encode_tile_overlap": 128,
+                            "decode_tiled": true,
+                            "decode_tile_size": 768,
+                            "decode_tile_overlap": 128,
+                            "tile_debug": "false",
+                            "offload_device": "cpu",
+                            "cache_model": false
+                          },
+                          "class_type": "SeedVR2LoadVAEModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load VAE Model"
+                          }
+                        },
+                        "14": {
+                          "inputs": {
+                            "model": "seedvr2_ema_3b_fp16.safetensors",
+                            "device": "cuda:0",
+                            "blocks_to_swap": 32,
+                            "swap_io_components": false,
+                            "offload_device": "cpu",
+                            "cache_model": false,
+                            "attention_mode": "sdpa"
+                          },
+                          "class_type": "SeedVR2LoadDiTModel",
+                          "_meta": {
+                            "title": "SeedVR2 (Down)Load DiT Model"
+                          }
+                        },
+                        "21": {
+                          "inputs": {
+                            "file": "Mustache_640x360.mp4"
+                          },
+                          "class_type": "LoadVideo",
+                          "_meta": {
+                            "title": "Load Video"
+                          }
+                        },
+                        "22": {
+                          "inputs": {
+                            "video": [
+                              "21",
+                              0
+                            ]
+                          },
+                          "class_type": "GetVideoComponents",
+                          "_meta": {
+                            "title": "Get Video Components"
+                          }
+                        },
+                        "23": {
+                          "inputs": {
+                            "filename_prefix": "video/ComfyUI",
+                            "format": "auto",
+                            "codec": "auto",
+                            "video": [
+                              "24",
+                              0
+                            ]
+                          },
+                          "class_type": "SaveVideo",
+                          "_meta": {
+                            "title": "Save Video"
+                          }
+                        },
+                        "24": {
+                          "inputs": {
+                            "bit_depth": 8,
+                            "images": [
+                              "10",
+                              0
+                            ],
+                            "fps": [
+                              "22",
+                              2
+                            ],
+                            "audio": [
+                              "22",
+                              1
+                            ]
+                          },
+                          "class_type": "CreateVideo",
+                          "_meta": {
+                            "title": "Create Video"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result/{request_id}": {
+      "get": {
+        "summary": "Result",
+        "description": "Get the result of a processing request",
+        "operationId": "result_result__request_id__get",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancel/{request_id}": {
+      "post": {
+        "summary": "Cancel Request Simple",
+        "description": "Cancel a request by marking it as cancelled",
+        "operationId": "cancel_request_simple_cancel__request_id__post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queue-info": {
+      "get": {
+        "summary": "Queue Info",
+        "description": "Get information about current queue sizes",
+        "operationId": "queue_info_queue_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Queue Info Queue Info Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint.\n\nWalks every configured ComfyUI backend (`COMFYUI_BACKENDS`)\nplus the per-backend GPU latch. Returns 200 + healthy only when\nALL backends pass HTTP + WS probes AND no GPU is latched as\nunrecoverable. Returns 503 if any backend fails — losing one\nComfyUI process means losing 1/N of the pod's capacity, and\nreplacing the whole pod is the simplest correct response for\nmost orchestrators.\n\nBody shape exposes both an aggregate (`status`, `gpu`,\n`backends_healthy`) and per-backend detail (`backends[]`) so\noperators can see which backend failed without parsing logs.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Input": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id",
+            "default": ""
+          },
+          "modifier": {
+            "type": "string",
+            "title": "Modifier",
+            "default": ""
+          },
+          "modifications": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Modifications"
+          },
+          "workflow_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Workflow Json"
+          },
+          "s3": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/S3Config"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhook": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WebHook"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "return_outputs_as_base64": {
+            "type": "boolean",
+            "title": "Return Outputs As Base64",
+            "default": false
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "Input"
+      },
+      "Payload": {
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/Input"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "title": "Payload",
+        "example": {
+          "input": {
+            "modifications": {
+              "param1": "value1",
+              "param2": 42
+            },
+            "modifier": "RawWorkflow",
+            "request_id": "123e4567-e89b-12d3-a456-426614174000",
+            "s3": {
+              "access_key_id": "your-s3-access-key",
+              "bucket_name": "your-bucket",
+              "endpoint_url": "https://my-endpoint.backblaze.com",
+              "region": "us-east-1",
+              "secret_access_key": "your-s3-secret-access-key"
+            },
+            "webhook": {
+              "extra_params": {
+                "custom_field": "value"
+              },
+              "url": "your-webhook-url"
+            },
+            "workflow_json": {
+              "9": {
+                "_meta": {
+                  "title": "Save Image"
+                },
+                "class_type": "SaveImage",
+                "inputs": {
+                  "filename_prefix": "ComfyUI",
+                  "images": [
+                    "10",
+                    0
+                  ]
+                }
+              },
+              "10": {
+                "_meta": {
+                  "title": "Load Image"
+                },
+                "class_type": "LoadImage",
+                "inputs": {
+                  "image": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/master/input/example.png",
+                  "upload": "image"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Result": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Request accepted"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "pending"
+          },
+          "comfyui_response": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Comfyui Response",
+            "default": {}
+          },
+          "output": {
+            "items": {},
+            "type": "array",
+            "title": "Output",
+            "default": []
+          },
+          "timings": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Timings",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "Result"
+      },
+      "S3Config": {
+        "properties": {
+          "access_key_id": {
+            "type": "string",
+            "title": "Access Key Id",
+            "default": ""
+          },
+          "secret_access_key": {
+            "type": "string",
+            "title": "Secret Access Key",
+            "default": ""
+          },
+          "endpoint_url": {
+            "type": "string",
+            "title": "Endpoint Url",
+            "default": ""
+          },
+          "bucket_name": {
+            "type": "string",
+            "title": "Bucket Name",
+            "default": ""
+          },
+          "region": {
+            "type": "string",
+            "title": "Region",
+            "default": ""
+          },
+          "connect_timeout": {
+            "type": "integer",
+            "title": "Connect Timeout",
+            "default": 60
+          },
+          "connect_attempts": {
+            "type": "integer",
+            "title": "Connect Attempts",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "title": "S3Config"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WebHook": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "extra_params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extra Params"
+          },
+          "timeout": {
+            "type": "integer",
+            "title": "Timeout",
+            "default": 30
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "WebHook"
+      }
+    }
+  }
+}

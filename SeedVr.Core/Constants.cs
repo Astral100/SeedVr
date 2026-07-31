@@ -10,10 +10,19 @@
             // Reports the queue depth on GET, and takes a workflow on POST.
             public const string PromptPath = "prompt";
 
+            // Takes a multipart file upload; despite the name it accepts videos too.
+            public const string UploadImagePath = "upload/image";
+
             public const string SeedVrModelFolder = "seedvr2";
 
             // Namespaces each job's uploads and outputs on the instance.
             public const string JobRootPrefix = "jobs";
+        }
+
+        public static class Wrapper
+        {
+            // Submits a job to the on-instance ComfyUI API wrapper and returns a request id.
+            public const string GeneratePath = "generate";
         }
 
         public static class Paths

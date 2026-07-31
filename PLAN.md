@@ -6,13 +6,16 @@ Upscale a local video with the SeedVR2 model on a rented Vast.ai ComfyUI instanc
 the console app: find a ready instance, upload the video, patch and submit the workflow, track progress,
 download the result, and clean up the instance afterwards.
 
-Still to be built: `SeedVrWorkflowBuilder` (clones and patches the API workflow per job), `ComfyProgressClient`
-(WebSocket monitor) and `JobContext` (job id, prompt id, filenames, status, last progress).
+Still to be built: `ComfyProgressClient` (WebSocket monitor) and `JobContext` (job id, prompt id,
+filenames, status, last progress).
 
 ## Current state
 
-Milestone 2 is complete and verified live against a real instance on 28/07/2026. Milestone 3 is next,
-starting with a check of the node IDs in the workflow JSON.
+Milestone 3 is in progress. The shared `SeedVrWorkflowBuilder` and both submit paths are built and
+compile: raw upload (`ComfyUiClient.UploadVideo`) plus `/prompt` (`ComfyUiClient.SubmitPrompt`), and
+wrapper `/generate` (`ComfyWrapperClient.Generate`). Remaining: wire them into `SeedVrJobRunner.Run`
+and resolve the wrapper's address. Node IDs and the wrapper contract are confirmed in
+`docs/comfyui-wrapper-openapi.json`.
 
 ## Milestones
 
@@ -28,29 +31,37 @@ starting with a check of the node IDs in the workflow JSON.
 
 ## Milestone 3 - patch, upload, submit
 
-- Check the node IDs in the workflow JSON before writing any code.
-- Patch node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 10 `SeedVR2VideoUpscaler.inputs.*`.
-- Upload via `POST /upload/image`, multipart, streamed.
-- Submit the workflow inline via `POST /prompt`.
+Two submit paths are built in parallel, raw ComfyUI and the wrapper, to compare them. Node IDs are
+confirmed against the `Seedvr2 Hd Video Upscale` example in `docs/comfyui-wrapper-openapi.json`:
+21 `LoadVideo`, 22 `GetVideoComponents`, 24 `CreateVideo`, 23 `SaveVideo`, 10 `SeedVR2VideoUpscaler`,
+13/14 the VAE/DiT loaders.
+
+Shared:
+- `SeedVrWorkflowBuilder` patches node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 10 `SeedVR2VideoUpscaler.inputs.*`.
+- Upload stays raw `POST /upload/image`, multipart, streamed; the wrapper has no upload endpoint, so a local file uploads through raw ComfyUI or S3.
 - Escape query values with `Uri.EscapeDataString`; `InputVideoPath` contains `[`, `]` and spaces.
-- Build `/view` from the server-returned filename and subfolder, not the local path.
-- Generate a `client_id` and send it with `/prompt`, so milestone 4 can attach its WebSocket.
-- Verify the node `class_types` exist via `/object_info/{node}`: `LoadVideo`, `GetVideoComponents`, `CreateVideo`, `SaveVideo`.
 - Resolve `videos/` at runtime; unlike `workflows/`, it is not copied to the output directory.
+
+Raw submit:
+- `POST /prompt` with `{prompt, client_id}`; generate the `client_id` so milestone 4 can attach its WebSocket.
+
+Wrapper submit:
+- `POST /generate` with `{input:{workflow_json}}`; the returned `request_id` is the correlation key, no `client_id`.
 
 ## Milestone 4 - live progress
 
-- WebSocket `/ws?clientId=...`, with `/history/<prompt_id>` polling as the fallback.
-- `/history` is the authoritative completion source when the socket drops.
+- Raw: WebSocket `/ws?clientId=...`, with `/history/<prompt_id>` polling as the fallback; `/history` is the authoritative completion source when the socket drops.
+- Wrapper: `POST /generate/stream` streamed status, or poll `GET /result/{request_id}`. Chunk format unverified, see Open decisions.
 
 ## Milestone 5 - download the result
 
-- `GET /view?filename=&subfolder=&type=output`, streamed to a `.part` file, renamed only on success.
+- Raw: `GET /view?filename=&subfolder=&type=output`, built from the server-returned filename and subfolder, streamed to a `.part` file, renamed only on success.
+- Wrapper: `GET /result/{request_id}`; the output arrives in `Result.output` as a URL or base64, per `return_outputs_as_base64` and the `s3` config.
 
 ## Milestone 6 - remote cleanup and cancellation
 
 - Remove `ComfyUI/input/jobs/<job-id>/` and `ComfyUI/output/jobs/<job-id>/` after a successful download.
-- Cancel via `POST /interrupt` or queue removal.
+- Cancel: raw `POST /interrupt` or queue removal; wrapper `POST /cancel/{request_id}`.
 
 ## Milestone 7 - timeouts and progress
 
@@ -66,7 +77,9 @@ Only `GetSystemStats` and `GetComfyUiQueueLength` carry a deadline; `ComfyUiClie
 
 ## Open decisions
 
-- Milestones 4-5: use the on-instance API wrapper (`/generate/stream`, `/result/{request_id}`, `/cancel/{request_id}`) or the raw ComfyUI protocol. Blocked on interpreting the `/generate/stream` disconnect. Choosing the wrapper reduces milestone 4 to parsing chunks, makes milestone 6 cancellation a `POST /cancel/{request_id}`, and makes milestone 3's `client_id` step unnecessary. Milestone 3 can start before this is settled.
+- The wrapper's address on the instance is unknown: it can't share ComfyUI's root path, so it is on a different port, and whether it is even deployed on the Vast.ai instances is unconfirmed. Needs a live check before the wrapper path can run.
+- `/generate/stream`'s chunk format is unspecified in the openapi (empty response schema); milestone 4's wrapper path needs it pinned down against a live instance.
+- The per-job output `filename_prefix` and upload namespacing under `jobs/<job-id>/`, which milestone 6 cleanup assumes. Deferred to `JobContext`.
 
 ## Unverified paths
 
@@ -76,6 +89,7 @@ Only `GetSystemStats` and `GetComfyUiQueueLength` carry a deadline; `ComfyUiClie
 
 - `AuthToken` is the instance `WEB_PASSWORD`, set at instance creation and kept in `appsettings.Development.json`, rather than a token read from the instance.
 - Milestone 2 unit tests were written and then reverted before commit, on request.
+- Both the raw ComfyUI and wrapper paths are built and kept, to compare them; the wrapper contract lives in `docs/comfyui-wrapper-openapi.json`.
 
 ## Deferred
 
