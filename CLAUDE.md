@@ -24,6 +24,7 @@
 - Do not run `dotnet build`/`run`/`test` after every small change. Batch small edits and verify once, or not at all when the change is trivially safe.
 - Build for substantial changes only: a new class, a refactor across several methods or files, or a behaviour change worth verifying.
 - Never commit without confirming first. Reverting, editing, or building a change is not a request to commit it.
+- Commit all pending changes in one commit, even unrelated ones, unless told otherwise.
 - Always push after committing. Do not wait to be asked. This applies only to commits already asked for; it is not licence to create one.
 - Do not prefix shell commands with `cd` or `Set-Location`. Use absolute paths where a path is needed.
 
