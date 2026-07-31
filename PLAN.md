@@ -11,13 +11,14 @@ the namespaced instance paths; its prompt id, status and progress are added when
 
 ## Current state
 
-Milestone 3 is code-complete and unverified live. Both submit paths are wired in `JobRunner`, sharing
-`PrepareJob` (resolve input, build the `JobContext`) and `BuildWorkflow` (upload via `ComfyUiClient.UploadVideo`,
-patch via `WorkflowBuilder`). `SubmitRawJob` submits over `ComfyUiClient.SubmitPrompt` with the context's
-`client_id` and reports `node_errors` on rejection; `SubmitWrapperJob` submits over `ComfyWrapperClient.Generate`
-to `AppSettings.WrapperBaseUrl`. `Run` calls the raw path; switch to the wrapper by toggling the commented line
-in `Run`. The workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs
-and the wrapper contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
+Milestone 3 is code-complete and unverified live. `JobRunner` orchestrates: `InstanceSelector` returns a ready
+instance's ComfyUI address, then `JobSubmitter` runs the job. `JobSubmitter` shares `PrepareJob` (resolve input,
+build the `JobContext`) and `BuildWorkflow` (upload via `ComfyUiClient.UploadVideo`, patch via `WorkflowBuilder`).
+`SubmitRawJob` submits over `ComfyUiClient.SubmitPrompt` with the context's `client_id` and reports `node_errors`
+on rejection; `SubmitWrapperJob` submits over `ComfyWrapperClient.Generate` to `AppSettings.WrapperBaseUrl`. `Run`
+calls the raw path; switch to the wrapper by toggling the commented line in `Run`. The workflow is a typed
+`SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper contract are confirmed
+in `docs/comfyui-wrapper-openapi.json`.
 
 Next, a single live session to close out milestone 3:
 - Run the raw path end-to-end against a rented instance: upload, submit, queued `prompt_id`.
@@ -90,6 +91,7 @@ Only `GetSystemStats` and `GetComfyUiQueueLength` carry a deadline; `ComfyUiClie
 - The wrapper's address is supplied by `AppSettings.WrapperBaseUrl` for now. Whether the wrapper is deployed on the Vast.ai instances, on what port, and its auth shape (`ComfyWrapperClient` assumes `Bearer AuthToken`) all need a live check; auto-discovery from the port mapping is deferred until its container port is known.
 - `/generate/stream`'s chunk format is unspecified in the openapi (empty response schema); milestone 4's wrapper path needs it pinned down against a live instance.
 - `JobContext` namespaces the upload (`/upload/image` `subfolder`) and output (`filename_prefix`) under `jobs/<job-id>/`. Confirm live that ComfyUI files the upload there, that `LoadVideo.file` reads it as `<subfolder>/<name>`, and that `SaveVideo` writes under `output/jobs/<job-id>/`, so milestone 6 cleanup can remove by that prefix.
+- Node 23 is the native `SaveVideo` (chained `CreateVideo` 24 -> `SaveVideo` 23). The `/history` output key it writes the file under (`images` vs a video-specific key) is unknown; milestone 5's download parses it to find the filename, so confirm it on the first live run.
 - The `node_errors` body shape on a rejected `/prompt`: `ComfyUiClient.SubmitPrompt` reads the 400 body into `ComfyUiSubmitResult`, whose `node_errors` field names are taken from the ComfyUI source, not a live response. Confirm them against a real 400.
 - Whether `NodeLink` and its converter are needed at all: the template links are `[string, int]` (`["22", 0]`), a mixed-type array. Test against a live `/prompt` whether ComfyUI also accepts a uniform array (both strings or both ints); if it does, drop `NodeLink` for a plain `List<string>`/`int[]` and delete the converter.
 
