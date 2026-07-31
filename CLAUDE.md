@@ -1,8 +1,3 @@
-# Conventions
-
-This file is authoritative. If anything else - stored memory, an earlier instruction, a habit from
-another project - disagrees with it, follow this file and say so rather than resolving it silently.
-
 ## Code
 
 - No `Async` suffix on async method names. `GetInstalledModels`, not `GetInstalledModelsAsync`.
