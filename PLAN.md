@@ -11,11 +11,12 @@ filenames, status, last progress).
 
 ## Current state
 
-Milestone 3 is in progress. The shared `WorkflowBuilder` and both submit paths are built and compile:
-raw upload (`ComfyUiClient.UploadVideo`) plus `/prompt` (`ComfyUiClient.SubmitPrompt`), and wrapper
-`/generate` (`ComfyWrapperClient.Generate`). The workflow is a typed `SeedVrWorkflow`, not raw JSON.
-Remaining: wire them into `JobRunner.Run` and resolve the wrapper's address. Node IDs and the wrapper
-contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
+Milestone 3 is in progress. The raw path is wired end to end in `JobRunner.Run`: upload
+(`ComfyUiClient.UploadVideo`), build (`WorkflowBuilder`), submit (`ComfyUiClient.SubmitPrompt`) with a
+generated `client_id`, and `node_errors` reported on rejection. The workflow is a typed `SeedVrWorkflow`,
+not raw JSON. The wrapper path (`ComfyWrapperClient.Generate`) is built but not wired, pending its address.
+Remaining: run the raw path against a live instance. Node IDs and the wrapper contract are confirmed in
+`docs/comfyui-wrapper-openapi.json`.
 
 ## Milestones
 
@@ -37,7 +38,7 @@ confirmed against the `Seedvr2 Hd Video Upscale` example in `docs/comfyui-wrappe
 13/14 the VAE/DiT loaders.
 
 Shared:
-- `SeedVrWorkflowBuilder` patches node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 10 `SeedVR2VideoUpscaler.inputs.*`.
+- `WorkflowBuilder` patches node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 14 DiT model and node 13 VAE model; `filename_prefix` is the input file's base name until `JobContext` lands.
 - Upload stays raw `POST /upload/image`, multipart, streamed; the wrapper has no upload endpoint, so a local file uploads through raw ComfyUI or S3.
 - Escape query values with `Uri.EscapeDataString`; `InputVideoPath` contains `[`, `]` and spaces.
 - Resolve `videos/` at runtime; unlike `workflows/`, it is not copied to the output directory.

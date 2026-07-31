@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using SeedVr.Core;
 using SeedVr.Logger;
 using SeedVr.Remote.Models;
+using SeedVr.Remote.Models.ComfyUi;
 using SeedVr.Remote.Models.VastAi;
 
 namespace SeedVr.Remote
@@ -12,12 +13,14 @@ namespace SeedVr.Remote
     {
         private readonly ComfyUiClient _comfyUiClient;
         private readonly VastAiClient _vastAiClient;
+        private readonly WorkflowBuilder _workflowBuilder;
         private readonly AppSettings _appSettings;
 
-        public JobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
             _vastAiClient = vastAiClient;
+            _workflowBuilder = workflowBuilder;
             _appSettings = appSettingsOptions.Value;
         }
 
@@ -42,7 +45,11 @@ namespace SeedVr.Remote
             }
 
             Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
-            return true;
+
+            var comfyUiAddress = BuildComfyUiAddress(availableInstance);
+            var submitted = await SubmitRawJob(comfyUiAddress, cancellationToken);
+
+            return submitted;
         }
 
         /// <summary>The account's running instances, or null when Vast.ai could not be read.</summary>
@@ -161,12 +168,19 @@ namespace SeedVr.Remote
             return InstanceState.Faulted;
         }
 
-        /// <summary>The instance's current ComfyUI address. Only meaningful once ValidateInstanceAddress reports Available.</summary>
+        /// <summary>The instance's current ComfyUI address, logged. Only meaningful once ValidateInstanceAddress reports Available.</summary>
         private string GetComfyUiAddress(VastAiInstance instance)
         {
-            var comfyUiAddress = $"http://{instance.PublicIpAddress}:{GetComfyUiHostPort(instance)}/";
+            var comfyUiAddress = BuildComfyUiAddress(instance);
             Log.Information("Vast.ai instance {InstanceId} is running at {Address}", [instance.Id, comfyUiAddress]);
 
+            return comfyUiAddress;
+        }
+
+        /// <summary>The instance's ComfyUI address without logging, so a caller can reuse it after evaluation.</summary>
+        private static string BuildComfyUiAddress(VastAiInstance instance)
+        {
+            var comfyUiAddress = $"http://{instance.PublicIpAddress}:{GetComfyUiHostPort(instance)}/";
             return comfyUiAddress;
         }
 
@@ -291,6 +305,78 @@ namespace SeedVr.Remote
 
             Log.Information("The ComfyUI job queue is empty.");
             return InstanceState.Available;
+        }
+
+        /// <summary>Uploads the input video, patches the workflow onto it and submits it to ComfyUI over the raw protocol.</summary>
+        private async Task<bool> SubmitRawJob(string comfyUiAddress, CancellationToken cancellationToken)
+        {
+            var configuredPath = _appSettings.InputVideoPath;
+            if (string.IsNullOrWhiteSpace(configuredPath))
+            {
+                Log.Error("No input video is configured. Set AppSettings:InputVideoPath to the video to upscale.");
+                return false;
+            }
+
+            // videos/ is not copied to the output directory, so the path resolves against the working directory, not the app base.
+            var localVideoPath = Path.GetFullPath(configuredPath);
+            if (!File.Exists(localVideoPath))
+            {
+                Log.Error("The input video was not found at '{Path}'. Check AppSettings:InputVideoPath and the working directory.", [localVideoPath]);
+                return false;
+            }
+
+            ComfyUiUploadResult upload;
+            try
+            {
+                Log.Information("Uploading the input video to the instance (POST /upload/image): {Path}", [localVideoPath]);
+                upload = await _comfyUiClient.UploadVideo(comfyUiAddress, localVideoPath, cancellationToken);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException)
+            {
+                Log.Error(ex, "Failed to upload the input video to the instance");
+                return false;
+            }
+
+            Log.Information("Uploaded the input video; ComfyUI stored it as {Name}.", [upload.Name]);
+
+            var outputFilenamePrefix = Path.GetFileNameWithoutExtension(localVideoPath);
+            var workflow = _workflowBuilder.Build(upload.Name, outputFilenamePrefix);
+
+            // The client id ties this submission to the progress broadcast a milestone 4 WebSocket will attach to.
+            var clientId = Guid.NewGuid().ToString();
+
+            ComfyUiSubmitResult submitResult;
+            try
+            {
+                Log.Information("Submitting the workflow to ComfyUI (POST /prompt), client_id {ClientId}...", [clientId]);
+                submitResult = await _comfyUiClient.SubmitPrompt(comfyUiAddress, workflow, clientId, cancellationToken);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
+            {
+                Log.Error(ex, "Failed to submit the workflow to ComfyUI");
+                return false;
+            }
+
+            if (submitResult.NodeErrors != null && submitResult.NodeErrors.Count > 0)
+            {
+                LogNodeErrors(submitResult.NodeErrors);
+                return false;
+            }
+
+            Log.Information("Submitted the job to ComfyUI. prompt_id {PromptId}, client_id {ClientId}.", [submitResult.PromptId, clientId]);
+            return true;
+        }
+
+        /// <summary>ComfyUI rejected one or more nodes in the workflow, so report each so the workflow can be fixed.</summary>
+        private void LogNodeErrors(IReadOnlyDictionary<string, NodeError> nodeErrors)
+        {
+            Log.Error("ComfyUI rejected the workflow: {Count} node(s) reported errors.", [nodeErrors.Count]);
+
+            foreach (var nodeError in nodeErrors)
+            {
+                var messages = string.Join("; ", nodeError.Value.Errors?.Select(error => error.Message) ?? []);
+                Log.Error("Node {NodeId} ({ClassType}): {Messages}", [nodeError.Key, nodeError.Value.ClassType, messages]);
+            }
         }
     }
 }
