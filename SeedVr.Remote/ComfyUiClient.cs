@@ -55,8 +55,8 @@ namespace SeedVr.Remote
             return status?.ExecInfo?.QueueRemaining;
         }
 
-        /// <summary>Uploads the local video to the instance's input folder and returns where ComfyUI stored it.</summary>
-        public async Task<ComfyUiUploadResult> UploadVideo(string baseUrl, string localVideoPath, CancellationToken cancellationToken = default)
+        /// <summary>Uploads the local video into the instance's input folder under the given subfolder and returns where ComfyUI stored it.</summary>
+        public async Task<ComfyUiUploadResult> UploadVideo(string baseUrl, string localVideoPath, string subfolder, CancellationToken cancellationToken = default)
         {
             // No control timeout: an upload runs far longer than a control call, so it uses the caller's token only.
             await using var fileStream = File.OpenRead(localVideoPath);
@@ -66,6 +66,12 @@ namespace SeedVr.Remote
 
             var fileName = Path.GetFileName(localVideoPath);
             content.Add(fileContent, "image", fileName);
+
+            // ComfyUI files the upload under input/<subfolder>/, which the caller uses to namespace and later clean up the job.
+            if (!string.IsNullOrEmpty(subfolder))
+            {
+                content.Add(new StringContent(subfolder), "subfolder");
+            }
 
             var response = await _httpClient.PostAsync($"{baseUrl}{Constants.ComfyUi.UploadImagePath}", content, cancellationToken);
             response.EnsureSuccessStatusCode();

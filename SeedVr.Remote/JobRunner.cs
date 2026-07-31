@@ -314,8 +314,8 @@ namespace SeedVr.Remote
             return InstanceState.Available;
         }
 
-        /// <summary>Resolves the input video, uploads it through raw ComfyUI and builds the patched workflow, or null on failure.</summary>
-        private async Task<SeedVrWorkflow> PrepareWorkflow(string comfyUiAddress, CancellationToken cancellationToken)
+        /// <summary>Resolves the input video and builds the job's identity and instance-side paths, or null when no input is configured or found.</summary>
+        private JobContext PrepareJob()
         {
             var configuredPath = _appSettings.InputVideoPath;
             if (string.IsNullOrWhiteSpace(configuredPath))
@@ -332,11 +332,29 @@ namespace SeedVr.Remote
                 return null;
             }
 
+            var jobId = Guid.NewGuid().ToString("N");
+            var uploadSubfolder = $"{Constants.ComfyUi.JobRootPrefix}/{jobId}";
+            var inputBaseName = Path.GetFileNameWithoutExtension(localVideoPath);
+            var jobContext = new JobContext
+            {
+                JobId = jobId,
+                ClientId = Guid.NewGuid().ToString(),
+                LocalVideoPath = localVideoPath,
+                UploadSubfolder = uploadSubfolder,
+                OutputFilenamePrefix = $"{uploadSubfolder}/{inputBaseName}"
+            };
+
+            return jobContext;
+        }
+
+        /// <summary>Uploads the input video into the job's subfolder and builds the patched workflow, or null on failure.</summary>
+        private async Task<SeedVrWorkflow> BuildWorkflow(string comfyUiAddress, JobContext jobContext, CancellationToken cancellationToken)
+        {
             ComfyUiUploadResult upload;
             try
             {
-                Log.Information("Uploading the input video to the instance (POST /upload/image): {Path}", [localVideoPath]);
-                upload = await _comfyUiClient.UploadVideo(comfyUiAddress, localVideoPath, cancellationToken);
+                Log.Information("Uploading the input video to the instance (POST /upload/image) under {Subfolder}: {Path}", [jobContext.UploadSubfolder, jobContext.LocalVideoPath]);
+                upload = await _comfyUiClient.UploadVideo(comfyUiAddress, jobContext.LocalVideoPath, jobContext.UploadSubfolder, cancellationToken);
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
@@ -344,31 +362,34 @@ namespace SeedVr.Remote
                 return null;
             }
 
-            Log.Information("Uploaded the input video; ComfyUI stored it as {Name}.", [upload.Name]);
+            // ComfyUI addresses a subfoldered upload as "<subfolder>/<name>"; without a subfolder it is just the name.
+            var uploadedFile = string.IsNullOrEmpty(upload.Subfolder) ? upload.Name : $"{upload.Subfolder}/{upload.Name}";
+            Log.Information("Uploaded the input video; ComfyUI stored it as {Name}.", [uploadedFile]);
 
-            var outputFilenamePrefix = Path.GetFileNameWithoutExtension(localVideoPath);
-            var workflow = _workflowBuilder.Build(upload.Name, outputFilenamePrefix);
-
+            var workflow = _workflowBuilder.Build(uploadedFile, jobContext.OutputFilenamePrefix);
             return workflow;
         }
 
         /// <summary>Uploads, builds and submits the workflow to ComfyUI over the raw protocol.</summary>
         private async Task<bool> SubmitRawJob(string comfyUiAddress, CancellationToken cancellationToken)
         {
-            var workflow = await PrepareWorkflow(comfyUiAddress, cancellationToken);
+            var jobContext = PrepareJob();
+            if (jobContext == null)
+            {
+                return false;
+            }
+
+            var workflow = await BuildWorkflow(comfyUiAddress, jobContext, cancellationToken);
             if (workflow == null)
             {
                 return false;
             }
 
-            // The client id ties this submission to the progress broadcast a milestone 4 WebSocket will attach to.
-            var clientId = Guid.NewGuid().ToString();
-
             ComfyUiSubmitResult submitResult;
             try
             {
-                Log.Information("Submitting the workflow to ComfyUI (POST /prompt), client_id {ClientId}...", [clientId]);
-                submitResult = await _comfyUiClient.SubmitPrompt(comfyUiAddress, workflow, clientId, cancellationToken);
+                Log.Information("Submitting the workflow to ComfyUI (POST /prompt), job {JobId}, client_id {ClientId}...", [jobContext.JobId, jobContext.ClientId]);
+                submitResult = await _comfyUiClient.SubmitPrompt(comfyUiAddress, workflow, jobContext.ClientId, cancellationToken);
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
@@ -382,7 +403,7 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            Log.Information("Submitted the job to ComfyUI. prompt_id {PromptId}, client_id {ClientId}.", [submitResult.PromptId, clientId]);
+            Log.Information("Submitted the job to ComfyUI. job {JobId}, prompt_id {PromptId}, client_id {ClientId}.", [jobContext.JobId, submitResult.PromptId, jobContext.ClientId]);
             return true;
         }
 
@@ -396,7 +417,13 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            var workflow = await PrepareWorkflow(comfyUiAddress, cancellationToken);
+            var jobContext = PrepareJob();
+            if (jobContext == null)
+            {
+                return false;
+            }
+
+            var workflow = await BuildWorkflow(comfyUiAddress, jobContext, cancellationToken);
             if (workflow == null)
             {
                 return false;
