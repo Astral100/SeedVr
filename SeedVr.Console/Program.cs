@@ -1,6 +1,6 @@
 using SeedVr.Remote;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
@@ -18,8 +18,8 @@ namespace SeedVr.Console
             {
                 var app = CreateHostApp();
                 var runner = app.Services.GetRequiredService<JobRunner>();
-                var isInstanceReady = await runner.Run();
-                return isInstanceReady ? 0 : 1;
+                var submitted = await runner.Run();
+                return submitted ? 0 : 1;
             }
             catch (Exception ex)
             {
@@ -33,9 +33,9 @@ namespace SeedVr.Console
             }
         }
 
-        private static WebApplication CreateHostApp()
+        private static IHost CreateHostApp()
         {
-            var builder = WebApplication.CreateBuilder();
+            var builder = Host.CreateApplicationBuilder();
 
             // Logging goes through Serilog, so the built-in console provider would only duplicate the output.
             builder.Logging.ClearProviders();
