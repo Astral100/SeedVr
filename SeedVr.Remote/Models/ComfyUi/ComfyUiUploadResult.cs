@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SeedVr.Remote.Models
+namespace SeedVr.Remote.Models.ComfyUi
 {
     /// <summary>The response of POST /upload/image, naming where ComfyUI stored the file.</summary>
     public class ComfyUiUploadResult

@@ -17,7 +17,7 @@ namespace SeedVr.Console
             try
             {
                 var app = CreateHostApp();
-                var runner = app.Services.GetRequiredService<SeedVrJobRunner>();
+                var runner = app.Services.GetRequiredService<JobRunner>();
                 var isInstanceReady = await runner.Run();
                 return isInstanceReady ? 0 : 1;
             }
@@ -47,8 +47,8 @@ namespace SeedVr.Console
             builder.Services.AddHttpClient<ComfyUiClient>();
             builder.Services.AddHttpClient<ComfyWrapperClient>();
             builder.Services.AddHttpClient<VastAiClient>();
-            builder.Services.AddTransient<SeedVrWorkflowBuilder>();
-            builder.Services.AddTransient<SeedVrJobRunner>();
+            builder.Services.AddTransient<WorkflowBuilder>();
+            builder.Services.AddTransient<JobRunner>();
 
             var app = builder.Build();
 

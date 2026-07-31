@@ -4,16 +4,17 @@ using Microsoft.Extensions.Options;
 using SeedVr.Core;
 using SeedVr.Logger;
 using SeedVr.Remote.Models;
+using SeedVr.Remote.Models.VastAi;
 
 namespace SeedVr.Remote
 {
-    public class SeedVrJobRunner
+    public class JobRunner
     {
         private readonly ComfyUiClient _comfyUiClient;
         private readonly VastAiClient _vastAiClient;
         private readonly AppSettings _appSettings;
 
-        public SeedVrJobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, VastAiClient vastAiClient, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
             _vastAiClient = vastAiClient;

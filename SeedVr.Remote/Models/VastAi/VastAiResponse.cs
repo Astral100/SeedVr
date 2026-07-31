@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using SeedVr.Core;
 
-namespace SeedVr.Remote.Models
+namespace SeedVr.Remote.Models.VastAi
 {
     public class VastAiResponse
     {

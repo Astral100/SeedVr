@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
-using SeedVr.Remote.Models;
+using SeedVr.Remote.Models.VastAi;
 
 namespace SeedVr.Remote
 {

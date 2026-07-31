@@ -1,9 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
-using SeedVr.Remote.Models;
+using SeedVr.Remote.Models.Workflow;
+using SeedVr.Remote.Models.Wrapper;
 
 namespace SeedVr.Remote
 {
@@ -28,13 +28,13 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Submits the workflow to the wrapper (async) and returns the request id to poll or stream against.</summary>
-        public async Task<WrapperResult> Generate(string baseUrl, JsonObject workflow, CancellationToken cancellationToken = default)
+        public async Task<WrapperResult> Generate(string baseUrl, SeedVrWorkflow workflow, CancellationToken cancellationToken = default)
         {
-            var request = new JsonObject
+            var request = new WrapperRequest
             {
-                ["input"] = new JsonObject
+                Input = new WrapperInput
                 {
-                    ["workflow_json"] = workflow
+                    WorkflowJson = workflow
                 }
             };
 

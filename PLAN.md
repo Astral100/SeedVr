@@ -11,11 +11,11 @@ filenames, status, last progress).
 
 ## Current state
 
-Milestone 3 is in progress. The shared `SeedVrWorkflowBuilder` and both submit paths are built and
-compile: raw upload (`ComfyUiClient.UploadVideo`) plus `/prompt` (`ComfyUiClient.SubmitPrompt`), and
-wrapper `/generate` (`ComfyWrapperClient.Generate`). Remaining: wire them into `SeedVrJobRunner.Run`
-and resolve the wrapper's address. Node IDs and the wrapper contract are confirmed in
-`docs/comfyui-wrapper-openapi.json`.
+Milestone 3 is in progress. The shared `WorkflowBuilder` and both submit paths are built and compile:
+raw upload (`ComfyUiClient.UploadVideo`) plus `/prompt` (`ComfyUiClient.SubmitPrompt`), and wrapper
+`/generate` (`ComfyWrapperClient.Generate`). The workflow is a typed `SeedVrWorkflow`, not raw JSON.
+Remaining: wire them into `JobRunner.Run` and resolve the wrapper's address. Node IDs and the wrapper
+contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
 ## Milestones
 
@@ -80,6 +80,7 @@ Only `GetSystemStats` and `GetComfyUiQueueLength` carry a deadline; `ComfyUiClie
 - The wrapper's address on the instance is unknown: it can't share ComfyUI's root path, so it is on a different port, and whether it is even deployed on the Vast.ai instances is unconfirmed. Needs a live check before the wrapper path can run.
 - `/generate/stream`'s chunk format is unspecified in the openapi (empty response schema); milestone 4's wrapper path needs it pinned down against a live instance.
 - The per-job output `filename_prefix` and upload namespacing under `jobs/<job-id>/`, which milestone 6 cleanup assumes. Deferred to `JobContext`.
+- Whether `NodeLink` and its converter are needed at all: the template links are `[string, int]` (`["22", 0]`), a mixed-type array. Test against a live `/prompt` whether ComfyUI also accepts a uniform array (both strings or both ints); if it does, drop `NodeLink` for a plain `List<string>`/`int[]` and delete the converter.
 
 ## Unverified paths
 

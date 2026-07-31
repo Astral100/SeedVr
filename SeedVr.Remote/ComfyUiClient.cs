@@ -1,9 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
-using SeedVr.Remote.Models;
+using SeedVr.Remote.Models.ComfyUi;
+using SeedVr.Remote.Models.Workflow;
 
 namespace SeedVr.Remote
 {
@@ -74,12 +74,12 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Submits the workflow to ComfyUI, tagged with the client id so a WebSocket can attach to its progress.</summary>
-        public async Task<ComfyUiSubmitResult> SubmitPrompt(string baseUrl, JsonObject workflow, string clientId, CancellationToken cancellationToken = default)
+        public async Task<ComfyUiSubmitResult> SubmitPrompt(string baseUrl, SeedVrWorkflow workflow, string clientId, CancellationToken cancellationToken = default)
         {
-            var request = new JsonObject
+            var request = new ComfyUiPromptRequest
             {
-                ["prompt"] = workflow,
-                ["client_id"] = clientId
+                Prompt = workflow, 
+                ClientId = clientId
             };
 
             var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{Constants.ComfyUi.PromptPath}", request, cancellationToken);

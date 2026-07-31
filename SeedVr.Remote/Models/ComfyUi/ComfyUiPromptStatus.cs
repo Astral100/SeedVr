@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SeedVr.Remote.Models
+namespace SeedVr.Remote.Models.ComfyUi
 {
     /// <summary>The response of GET /prompt, which ComfyUI uses to report its queue depth.</summary>
     public class ComfyUiPromptStatus
