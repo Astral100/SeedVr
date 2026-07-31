@@ -425,9 +425,21 @@ namespace SeedVr.Remote
 
             foreach (var nodeError in nodeErrors)
             {
-                var messages = string.Join("; ", nodeError.Value.Errors?.Select(error => error.Message) ?? []);
+                var messages = string.Join("; ", nodeError.Value.Errors?.Select(error => FormatNodeError(error)) ?? []);
                 Log.Error("Node {NodeId} ({ClassType}): {Messages}", [nodeError.Key, nodeError.Value.ClassType, messages]);
             }
+        }
+
+        /// <summary>One node error as "message (details)", dropping the details when ComfyUI left them empty.</summary>
+        private static string FormatNodeError(NodeErrorDetail error)
+        {
+            if (string.IsNullOrEmpty(error.Details))
+            {
+                return error.Message;
+            }
+
+            var formatted = $"{error.Message} ({error.Details})";
+            return formatted;
         }
     }
 }

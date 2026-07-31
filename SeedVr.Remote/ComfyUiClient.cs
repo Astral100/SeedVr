@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
@@ -83,7 +84,14 @@ namespace SeedVr.Remote
             };
 
             var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{Constants.ComfyUi.PromptPath}", request, cancellationToken);
-            response.EnsureSuccessStatusCode();
+
+            // ComfyUI rejects an invalid workflow with 400 and a body carrying node_errors; read that body
+            // instead of throwing, so the caller can report which node was refused. Any other non-success
+            // status has no such body, so surface it as an exception.
+            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.BadRequest)
+            {
+                response.EnsureSuccessStatusCode();
+            }
 
             var result = await response.Content.ReadFromJsonAsync<ComfyUiSubmitResult>(cancellationToken);
             return result;
