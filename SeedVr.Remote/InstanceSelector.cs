@@ -23,8 +23,8 @@ namespace SeedVr.Remote
             _appSettings = appSettingsOptions.Value;
         }
 
-        /// <summary>The ComfyUI address of the first instance that can take the job, or null when none can.</summary>
-        public async Task<string> GetFirstAvailableInstanceAddress(CancellationToken cancellationToken = default)
+        /// <summary>The first instance that can take the job, or null when none can.</summary>
+        public async Task<VastAiInstance> GetFirstAvailableInstance(CancellationToken cancellationToken = default)
         {
             var runningInstances = await GetRunningInstances(cancellationToken);
             if (runningInstances == null)
@@ -38,16 +38,14 @@ namespace SeedVr.Remote
                 return null;
             }
 
-            var availableInstance = await GetFirstAvailableInstance(runningInstances, cancellationToken);
+            var availableInstance = await FindFirstAvailableInstance(runningInstances, cancellationToken);
             if (availableInstance == null)
             {
                 return null;
             }
 
             Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
-
-            var comfyUiAddress = availableInstance.GetComfyUiAddress();
-            return comfyUiAddress;
+            return availableInstance;
         }
 
         /// <summary>The account's running instances, or null when Vast.ai could not be read.</summary>
@@ -78,7 +76,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>The first instance that is reachable, has the models downloaded and is not busy, or null when there is none.</summary>
-        private async Task<VastAiInstance> GetFirstAvailableInstance(IReadOnlyList<VastAiInstance> instances, CancellationToken cancellationToken)
+        private async Task<VastAiInstance> FindFirstAvailableInstance(IReadOnlyList<VastAiInstance> instances, CancellationToken cancellationToken)
         {
             var unavailableInstances = new List<InstanceState>();
 

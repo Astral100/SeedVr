@@ -39,6 +39,9 @@
             // ComfyUI's port inside the container; Vast.ai maps it to a different external port on each start.
             public const string ComfyUiContainerPort = "8188/tcp";
 
+            // The API wrapper's port inside the container, mapped to a different external port on each start.
+            public const string WrapperContainerPort = "8288/tcp";
+
             public const string RunningStatus = "running";
         }
     }

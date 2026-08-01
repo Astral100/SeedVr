@@ -14,15 +14,17 @@ namespace SeedVr.Remote
 
         public async Task<bool> StartJob(CancellationToken cancellationToken = default)
         {
-            var comfyUiAddress = await _instanceSelector.GetFirstAvailableInstanceAddress(cancellationToken);
-            if (comfyUiAddress == null)
+            var instance = await _instanceSelector.GetFirstAvailableInstance(cancellationToken);
+            if (instance == null)
             {
                 return false;
             }
 
+            var comfyUiAddress = instance.GetComfyUiAddress();
+
             // Raw and wrapper submit paths are both available; comment one and uncomment the other to switch.
             var success = await _jobRunner.StartRawJob(comfyUiAddress, cancellationToken);
-            // var success = await _jobRunner.StartWrapperJob(comfyUiAddress, cancellationToken);
+            // var success = await _jobRunner.StartWrapperJob(comfyUiAddress, instance.GetWrapperAddress(), cancellationToken);
 
             return success;
         }

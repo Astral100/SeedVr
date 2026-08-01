@@ -37,12 +37,28 @@ namespace SeedVr.Remote.Models.VastAi
             var hostPort = GetComfyUiHostPort();
             return $"http://{PublicIpAddress}:{hostPort}/";
         }
+
+        /// <summary>The host port the API wrapper is published on, or null when the instance does not publish it.</summary>
+        public string GetWrapperHostPort()
+        {
+            return Ports?.Wrapper?.FirstOrDefault()?.HostPort;
+        }
+
+        /// <summary>The instance's API wrapper base address, built from its public IP and published wrapper port.</summary>
+        public string GetWrapperAddress()
+        {
+            var hostPort = GetWrapperHostPort();
+            return $"http://{PublicIpAddress}:{hostPort}/";
+        }
     }
 
     public class VastAiPorts
     {
         [JsonPropertyName(Constants.VastAi.ComfyUiContainerPort)]
         public List<VastAiPortBinding> ComfyUi { get; set; }
+
+        [JsonPropertyName(Constants.VastAi.WrapperContainerPort)]
+        public List<VastAiPortBinding> Wrapper { get; set; }
 
         /// <summary>Everything else the instance publishes, which tells an empty mapping apart from one without ComfyUI.</summary>
         [JsonExtensionData]

@@ -48,15 +48,8 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Uploads through raw ComfyUI, then submits the same workflow to the on-instance API wrapper instead of /prompt.</summary>
-        public async Task<bool> StartWrapperJob(string comfyUiAddress, CancellationToken cancellationToken)
+        public async Task<bool> StartWrapperJob(string comfyUiAddress, string wrapperAddress, CancellationToken cancellationToken)
         {
-            var wrapperBaseUrl = _appSettings.WrapperBaseUrl;
-            if (string.IsNullOrWhiteSpace(wrapperBaseUrl))
-            {
-                Log.Error("No wrapper address is configured. Set AppSettings:WrapperBaseUrl to the on-instance wrapper URL.");
-                return false;
-            }
-
             var jobRequest = GetJobRequest();
             if (jobRequest == null)
             {
@@ -71,7 +64,7 @@ namespace SeedVr.Remote
 
             var workflow = _workflowBuilder.GetSeedVrWorkflow(uploadedFile, jobRequest.OutputFilenamePrefix);
 
-            var success = await SubmitWorkflowToWrapper(wrapperBaseUrl, workflow, cancellationToken);
+            var success = await SubmitWorkflowToWrapper(wrapperAddress, workflow, cancellationToken);
             return success;
         }
 

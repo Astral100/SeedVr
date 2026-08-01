@@ -12,19 +12,21 @@ namespaced instance paths; its prompt id, status and progress are added when mil
 ## Current state
 
 Milestone 3's raw path is verified live (01/08/2026). `JobOrchestrator` orchestrates: `InstanceSelector` returns a ready
-instance's ComfyUI address, then `JobRunner` runs the job. `JobRunner` shares
+instance, from which `JobOrchestrator` derives the ComfyUI and wrapper addresses, then `JobRunner` runs the job. `JobRunner` shares
 `GetJobRequest` (resolve input, build the `JobRequest`), `UploadInputVideo` (via `ComfyUiClient.UploadVideo`) and
 the `WorkflowBuilder` patch. `StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the request's `client_id`
-and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to
-`AppSettings.WrapperBaseUrl`. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in
-`StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to the wrapper
+address derived from the instance's `8288/tcp` mapping. `StartJob` calls the raw path; switch to the wrapper by
+toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
 The raw path ran end-to-end against a rented instance: instance gating, upload into `jobs/<job-id>/`, patch and
 `POST /prompt` to a queued `prompt_id`, then the job ran to `status_str: success`. Both sides of the `jobs/<job-id>/`
 namespacing, the mixed `[string, int]` `NodeLink` form and the `node_errors` 400 shape are confirmed live; a uniform
-all-string or all-integer link is rejected. Still open: the whole wrapper path (deployment, port, auth).
+all-string or all-integer link is rejected. The wrapper path is verified live too: `Bearer AuthToken` passes the
+wrapper's proxy, `/generate` returns a `request_id`, and `/result/{request_id}` reports progress then a `completed`
+output. Without an `s3` config the wrapper returns file references, not the bytes.
 
 ## Milestones
 
@@ -32,7 +34,7 @@ all-string or all-integer link is rejected. Still open: the whole wrapper path (
 | - | --------- | ------ |
 | 1 | Config and health check | Done, verified live |
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
-| 3 | Patch workflow, upload, submit | Done, raw path verified live 01/08/2026; wrapper path unverified |
+| 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
 | 4 | Live progress | Not started |
 | 5 | Download the result | Not started |
 | 6 | Remote cleanup and cancellation | Not started |
@@ -56,17 +58,17 @@ Raw submit:
 
 Wrapper submit:
 - `POST /generate` with `{input:{workflow_json}}`; the returned `request_id` is the correlation key, no `client_id`.
-- Address comes from `AppSettings.WrapperBaseUrl` until port discovery is settled; the two paths are chosen by editing `Run`, not a runtime switch.
+- The address is derived from the instance's `8288/tcp` port mapping via `GetWrapperAddress`; the two paths are chosen by editing `StartJob`, not a runtime switch.
 
 ## Milestone 4 - live progress
 
 - Raw: WebSocket `/ws?clientId=...`, with `/history/<prompt_id>` polling as the fallback; `/history` is the authoritative completion source when the socket drops. Completion is `status.completed == true` with `status.status_str == "success"` (confirmed live).
-- Wrapper: `POST /generate/stream` streamed status, or poll `GET /result/{request_id}`. Chunk format unverified, see Open decisions.
+- Wrapper: poll `GET /result/{request_id}` (confirmed live: `status` goes `pending` -> `generating` -> `completed`, with the percent inside the human-readable `message`, e.g. "Progress: 70.0% (70/100)"), or `POST /generate/stream` for structured status (chunk format still unverified, see Open decisions).
 
 ## Milestone 5 - download the result
 
 - Raw: `GET /view?filename=&subfolder=&type=output`, built from the server-returned filename and subfolder, streamed to a `.part` file, renamed only on success. Confirmed live: `outputs["23"].images[0]` carries `filename`, `subfolder` (`jobs/<job-id>`) and `type` (`output`); ComfyUI appends its own counter and extension (`..._00001_.mp4`), so use the returned filename verbatim.
-- Wrapper: `GET /result/{request_id}`; the output arrives in `Result.output` as a URL or base64, per `return_outputs_as_base64` and the `s3` config.
+- Wrapper: `GET /result/{request_id}` once `status == "completed"`. Confirmed live: `Result.output[]` carries `filename`, `subfolder` (`jobs/<job-id>`), `type` (`output`), `node_id` (`23`), `output_type` (`images`) and a worker `local_path`. Without an `s3` config the wrapper returns these references, not the bytes, so the download still goes through raw `/view` - or pass an `s3` config so the wrapper uploads and the URL comes back in the output (the path production needs, since a routed ephemeral worker's raw `/view` is unreachable after the fact).
 
 ## Milestone 6 - remote cleanup and cancellation
 
@@ -85,7 +87,6 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 
 ## Open decisions
 
-- The wrapper's address is supplied by `AppSettings.WrapperBaseUrl` for now. Whether the wrapper is deployed on the Vast.ai instances, on what port, and its auth shape (`ComfyWrapperClient` assumes `Bearer AuthToken`) all need a live check; auto-discovery from the port mapping is deferred until its container port is known.
 - `/generate/stream`'s chunk format is unspecified in the openapi (empty response schema); milestone 4's wrapper path needs it pinned down against a live instance.
 
 ## Unverified paths
@@ -99,6 +100,8 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 - Both the raw ComfyUI and wrapper paths are built and kept, to compare them; the wrapper contract lives in `docs/comfyui-wrapper-openapi.json`.
 - ComfyUI requires the mixed `[string, int]` link form: an all-string array fails on the output index ("list indices must be integers"), an all-integer array fails on the node id, so `NodeLink` and its converter stay.
 - `ComfyUiSubmitResult`'s `node_errors` shape (`class_type`, `errors[].message`/`details`) is confirmed against a live 400.
+- The wrapper returns output as file references (`filename`/`subfolder`/`type`/`local_path`), not bytes, unless an `s3` config is passed. Production on serverless will need `s3` for both input and output delivery, since a routed ephemeral worker's raw `/view` and local disk are unreachable after the fact.
+- The API wrapper runs on container port `8288/tcp` (baked into the SeedVR2 Vast template, alongside ComfyUI's `8188/tcp`) and its proxy accepts `Bearer AuthToken`; its address resolves live from the instance's port mapping via `GetWrapperAddress`, so no wrapper URL is configured.
 
 ## Deferred
 
