@@ -189,11 +189,24 @@ namespace SeedVr.Remote
                 Log.Warning("ComfyUI is not answering on the instance yet: {Reason}", [ex.Message]);
                 return InstanceState.Provisioning;
             }
+            // The proxy answers but cannot reach ComfyUI behind it yet: the container is up but the ComfyUI
+            // process is still starting, so the reverse proxy returns a gateway error rather than a refusal.
+            catch (HttpRequestException ex) when (IsComfyUiStillStarting(ex.StatusCode))
+            {
+                Log.Warning("ComfyUI is not ready behind the proxy yet (StatusCode {StatusCode}). It may still be starting up.", [ex.StatusCode]);
+                return InstanceState.Provisioning;
+            }
             catch (HttpRequestException ex)
             {
                 Log.Warning("ComfyUI refused the health check with StatusCode {StatusCode}", [ex.StatusCode]);
                 return InstanceState.Faulted;
             }
+        }
+
+        /// <summary>A gateway status comes from the reverse proxy, not ComfyUI, so the backend is still starting up rather than broken.</summary>
+        private static bool IsComfyUiStillStarting(HttpStatusCode? statusCode)
+        {
+            return statusCode == HttpStatusCode.BadGateway || statusCode == HttpStatusCode.ServiceUnavailable || statusCode == HttpStatusCode.GatewayTimeout;
         }
 
         private async Task<InstanceState> ValidateModelsDownloaded(string comfyUiAddress, CancellationToken cancellationToken)

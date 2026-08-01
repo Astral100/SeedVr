@@ -5,7 +5,7 @@
 - Keep statements and signatures on one line, unless the line is genuinely long or the signature has many parameters.
 - Compare strings with `==` and `!=`. Never `string.Equals`, and no `ToLower`/`ToUpper` unless genuinely necessary.
 - Every enum declares `Unknown` first, so the default value is never a real state.
-- A `return` never contains a method call — assign to a variable first. Exception: a simple synchronous expression (a member/null-conditional chain, interpolation, a trivial call like `FirstOrDefault()`) may be returned directly, even after one short calculation; an `await`ed or non-trivial result always goes through a variable.
+- Don't inline a non-trivial or `await`ed call into a `return` — assign it to a variable first. Do return a simple synchronous expression (member/null-conditional chain, interpolation, comparison, trivial call like `FirstOrDefault()`) directly, never through a throwaway variable.
 - Only 9.x NuGet packages.
 - Prefer `GetFromJsonAsync`/`ReadFromJsonAsync` over reading streams and calling `JsonSerializer` by hand.
 - Keep methods stateless: return a value rather than mutating another object, and pass what a method needs explicitly.
