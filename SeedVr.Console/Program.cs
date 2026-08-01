@@ -1,4 +1,5 @@
 using SeedVr.Remote;
+using SeedVr.Remote.HttpClients;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,12 +15,25 @@ namespace SeedVr.Console
         {
             LogRegister.CreateLogger();
 
+            using var cancellation = new CancellationTokenSource();
+            System.Console.CancelKeyPress += (_, eventArgs) =>
+            {
+                // Handle the signal so the run unwinds, logs and flushes rather than the process being killed outright.
+                eventArgs.Cancel = true;
+                cancellation.Cancel();
+            };
+
             try
             {
                 var app = CreateHostApp();
-                var runner = app.Services.GetRequiredService<JobOrchestrator>();
-                var submitted = await runner.StartJob();
-                return submitted ? 0 : 1;
+                var orchestrator = app.Services.GetRequiredService<JobOrchestrator>();
+                var success = await orchestrator.StartJob(cancellation.Token);
+                return success ? 0 : 1;
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Warning("Run cancelled.");
+                return 1;
             }
             catch (Exception ex)
             {

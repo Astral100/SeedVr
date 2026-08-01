@@ -6,19 +6,20 @@ Upscale a local video with the SeedVR2 model on a rented Vast.ai ComfyUI instanc
 the console app: find a ready instance, upload the video, patch and submit the workflow, track progress,
 download the result, and clean up the instance afterwards.
 
-Still to be built: `ComfyProgressClient` (WebSocket monitor). `JobRequest` carries the job id, client id and
-the namespaced instance paths; its prompt id, status and progress are added when milestones 4 and 5 need them.
+Still to be built: `ComfyProgressClient` (WebSocket monitor). `JobRequest` carries the job id, client id and the
+namespaced instance paths; its prompt id, status and progress are added when milestones 4 and 5 need them.
 
 ## Current state
 
 Milestone 3 is code-complete and unverified live. `JobOrchestrator` orchestrates: `InstanceSelector` returns a ready
-instance's ComfyUI address, then `JobRunner` runs the job. `JobRunner` shares `PrepareJob` (resolve input,
-build the `JobRequest`), `UploadInputVideo` (via `ComfyUiClient.UploadVideo`) and the `WorkflowBuilder` patch.
-`StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the context's `client_id` and reports `node_errors`
-on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to `AppSettings.WrapperBaseUrl`. `StartJob`
-calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. The workflow is a typed
-`SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper contract are confirmed
-in `docs/comfyui-wrapper-openapi.json`.
+instance's ComfyUI address, then `JobRunner` runs the job. `JobRunner` shares
+`GetJobRequest` (resolve input, build the `JobRequest`), `UploadInputVideo` (via `ComfyUiClient.UploadVideo`) and
+the `WorkflowBuilder` patch. `StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the request's `client_id`
+and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to
+`AppSettings.WrapperBaseUrl`. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in
+`StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
+contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
 Next, a single live session to close out milestone 3:
 - Run the raw path end-to-end against a rented instance: upload, submit, queued `prompt_id`.
@@ -47,7 +48,7 @@ confirmed against the `Seedvr2 Hd Video Upscale` example in `docs/comfyui-wrappe
 13/14 the VAE/DiT loaders.
 
 Shared:
-- `WorkflowBuilder` patches node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 14 DiT model and node 13 VAE model. `PrepareJob` builds the `JobRequest`: `LoadVideo.file` is the subfoldered upload, `filename_prefix` is `jobs/<job-id>/<input base name>`.
+- `WorkflowBuilder` patches node 21 `LoadVideo.file`, node 23 `SaveVideo.filename_prefix`, node 14 DiT model and node 13 VAE model. `GetJobRequest` builds the `JobRequest`: `LoadVideo.file` is the subfoldered upload, `filename_prefix` is `jobs/<job-id>/<input base name>`.
 - Upload stays raw `POST /upload/image`, multipart, streamed, into subfolder `jobs/<job-id>`; the wrapper has no upload endpoint, so a local file uploads through raw ComfyUI or S3.
 - Escape query values with `Uri.EscapeDataString`; `InputVideoPath` contains `[`, `]` and spaces.
 - Resolve `videos/` at runtime; unlike `workflows/`, it is not copied to the output directory.

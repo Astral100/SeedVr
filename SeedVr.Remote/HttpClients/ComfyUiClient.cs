@@ -6,7 +6,7 @@ using SeedVr.Core;
 using SeedVr.Remote.Models.ComfyUi;
 using SeedVr.Remote.Models.Workflow;
 
-namespace SeedVr.Remote
+namespace SeedVr.Remote.HttpClients
 {
     public class ComfyUiClient
     {

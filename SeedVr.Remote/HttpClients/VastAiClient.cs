@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using SeedVr.Core;
 using SeedVr.Remote.Models.VastAi;
 
-namespace SeedVr.Remote
+namespace SeedVr.Remote.HttpClients
 {
     /// <summary>
     /// Reads instance details from the Vast.ai account API, so the ComfyUI address can be

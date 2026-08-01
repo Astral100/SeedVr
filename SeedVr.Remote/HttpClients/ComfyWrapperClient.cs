@@ -5,7 +5,7 @@ using SeedVr.Core;
 using SeedVr.Remote.Models.Workflow;
 using SeedVr.Remote.Models.Wrapper;
 
-namespace SeedVr.Remote
+namespace SeedVr.Remote.HttpClients
 {
     /// <summary>Talks to the on-instance ComfyUI API wrapper, the alternative to driving ComfyUI's raw protocol.</summary>
     public class ComfyWrapperClient

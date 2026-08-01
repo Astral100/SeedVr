@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
 using SeedVr.Logger;
+using SeedVr.Remote.HttpClients;
 using SeedVr.Remote.Models;
 using SeedVr.Remote.Models.ComfyUi;
 using SeedVr.Remote.Models.Workflow;
