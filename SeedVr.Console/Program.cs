@@ -49,7 +49,10 @@ namespace SeedVr.Console
 
         private static IHost CreateHostApp()
         {
-            var builder = Host.CreateApplicationBuilder();
+            // Pin the content root to the app's own directory so appsettings load from where they are copied,
+            // leaving the working directory free to point at the repo root where videos/ and workflows/ live.
+            var hostSettings = new HostApplicationBuilderSettings { ContentRootPath = AppContext.BaseDirectory };
+            var builder = Host.CreateApplicationBuilder(hostSettings);
 
             // Logging goes through Serilog, so the built-in console provider would only duplicate the output.
             builder.Logging.ClearProviders();

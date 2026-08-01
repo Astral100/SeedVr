@@ -2,6 +2,7 @@
   "profiles": {
     "SeedVr.Console": {
       "commandName": "Project",
+      "workingDirectory": "$(ProjectDir)..",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }
