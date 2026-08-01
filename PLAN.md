@@ -6,8 +6,8 @@ Upscale a local video with the SeedVR2 model on a rented Vast.ai ComfyUI instanc
 the console app: find a ready instance, upload the video, patch and submit the workflow, track progress,
 download the result, and clean up the instance afterwards.
 
-Still to be built: `ComfyProgressClient` (WebSocket monitor). `JobRequest` carries the job id, client id and the
-namespaced instance paths; its prompt id, status and progress are added when milestones 4 and 5 need them.
+`JobRequest` carries the job id, client id and the namespaced instance paths; its prompt id, status and progress
+are added when milestones 4 and 5 need them.
 
 ## Current state
 
@@ -16,8 +16,9 @@ instance, from which `JobOrchestrator` derives the ComfyUI and wrapper addresses
 `GetJobRequest` (resolve input, build the `JobRequest`), `UploadInputVideo` (via `ComfyUiClient.UploadVideo`) and
 the `WorkflowBuilder` patch. `StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the request's `client_id`
 and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to the wrapper
-address derived from the instance's `8288/tcp` mapping. `StartJob` calls the raw path; switch to the wrapper by
-toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+address derived from the instance's `8288/tcp` mapping. After the raw submit, `ComfyProgressClient.TrackJobCompletion`
+watches the ComfyUI progress WebSocket and then confirms completion over `/history`, so `StartRawJob` returns only
+once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
@@ -35,7 +36,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 1 | Config and health check | Done, verified live |
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
-| 4 | Live progress | Not started |
+| 4 | Live progress | Raw path built (socket + /history); wrapper polling not started |
 | 5 | Download the result | Not started |
 | 6 | Remote cleanup and cancellation | Not started |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |

@@ -23,7 +23,7 @@
 - Update `PLAN.md` with the latest project state on every change that affects the plan.
 - Do not run `dotnet build`/`run`/`test` after every small change. Batch small edits and verify once, or not at all when the change is trivially safe.
 - Build for substantial changes only: a new class, a refactor across several methods or files, or a behaviour change worth verifying.
-- Never commit without confirming first. Reverting, editing, or building a change is not a request to commit it.
+- Never commit or push without an explicit request in that message ("commit"/"push"). Reverting, editing, building, verifying, or agreeing on what a commit would contain is not a request to commit it — wait for the direct instruction.
 - Commit all pending changes in one commit, even unrelated ones, unless told otherwise.
 - Always push after committing. Do not wait to be asked. This applies only to commits already asked for; it is not licence to create one.
 - Do not prefix shell commands with `cd` or `Set-Location`. Use absolute paths where a path is needed.

@@ -58,6 +58,22 @@ namespace SeedVr.Remote.HttpClients
             return status?.ExecInfo?.QueueRemaining;
         }
 
+        /// <summary>The job's /history entry once ComfyUI has recorded it, or null while it is still queued or running.</summary>
+        public async Task<ComfyUiHistoryEntry> GetJobHistory(string baseUrl, string promptId, CancellationToken cancellationToken = default)
+        {
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_controlTimeout);
+
+            // /history/<id> returns an object keyed by the prompt id, empty until the job is recorded.
+            var history = await _httpClient.GetFromJsonAsync<Dictionary<string, ComfyUiHistoryEntry>>($"{baseUrl}{Constants.ComfyUi.HistoryPath}/{promptId}", timeoutSource.Token);
+            if (history != null && history.TryGetValue(promptId, out var entry))
+            {
+                return entry;
+            }
+
+            return null;
+        }
+
         /// <summary>Uploads the local video into the instance's input folder under the given subfolder and returns where ComfyUI stored it.</summary>
         public async Task<ComfyUiUploadResult> UploadVideo(string baseUrl, string localVideoPath, string subfolder, CancellationToken cancellationToken = default)
         {

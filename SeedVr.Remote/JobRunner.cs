@@ -14,13 +14,15 @@ namespace SeedVr.Remote
     public class JobRunner
     {
         private readonly ComfyUiClient _comfyUiClient;
+        private readonly ComfyProgressClient _comfyProgressClient;
         private readonly ComfyWrapperClient _comfyWrapperClient;
         private readonly WorkflowBuilder _workflowBuilder;
         private readonly AppSettings _appSettings;
 
-        public JobRunner(ComfyUiClient comfyUiClient, ComfyWrapperClient comfyWrapperClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, ComfyProgressClient comfyProgressClient, ComfyWrapperClient comfyWrapperClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
+            _comfyProgressClient = comfyProgressClient;
             _comfyWrapperClient = comfyWrapperClient;
             _workflowBuilder = workflowBuilder;
             _appSettings = appSettingsOptions.Value;
@@ -43,7 +45,13 @@ namespace SeedVr.Remote
 
             var workflow = _workflowBuilder.GetSeedVrWorkflow(uploadedFile, jobRequest.OutputFilenamePrefix);
 
-            var success = await SubmitWorkflowToComfyUi(comfyUiAddress, workflow, jobRequest, cancellationToken);
+            var promptId = await SubmitWorkflowToComfyUi(comfyUiAddress, workflow, jobRequest, cancellationToken);
+            if (promptId == null)
+            {
+                return false;
+            }
+
+            var success = await _comfyProgressClient.TrackJobCompletion(comfyUiAddress, jobRequest.ClientId, promptId, cancellationToken);
             return success;
         }
 
@@ -115,8 +123,8 @@ namespace SeedVr.Remote
             return uploadedFile;
         }
 
-        /// <summary>Submits the workflow to ComfyUI over the raw protocol; false when the submission fails or a node is rejected.</summary>
-        private async Task<bool> SubmitWorkflowToComfyUi(string comfyUiAddress, SeedVrWorkflow workflow, JobRequest jobRequest, CancellationToken cancellationToken)
+        /// <summary>Submits the workflow to ComfyUI over the raw protocol and returns its prompt id, or null when the submission fails or a node is rejected.</summary>
+        private async Task<string> SubmitWorkflowToComfyUi(string comfyUiAddress, SeedVrWorkflow workflow, JobRequest jobRequest, CancellationToken cancellationToken)
         {
             ComfyUiSubmitResult submitResult;
             try
@@ -127,23 +135,23 @@ namespace SeedVr.Remote
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
                 Log.Error(ex, "Failed to submit the workflow to ComfyUI");
-                return false;
+                return null;
             }
 
             if (submitResult == null)
             {
                 Log.Error("ComfyUI returned no usable response to the submission.");
-                return false;
+                return null;
             }
 
             if (submitResult.NodeErrors != null && submitResult.NodeErrors.Count > 0)
             {
                 LogNodeErrors(submitResult.NodeErrors);
-                return false;
+                return null;
             }
 
             Log.Information("Submitted the job to ComfyUI. job {JobId}, prompt_id {PromptId}, client_id {ClientId}.", [jobRequest.JobId, submitResult.PromptId, jobRequest.ClientId]);
-            return true;
+            return submitResult.PromptId;
         }
 
         /// <summary>Submits the workflow to the on-instance API wrapper (POST /generate); false when the submission fails.</summary>
