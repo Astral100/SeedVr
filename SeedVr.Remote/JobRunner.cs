@@ -16,14 +16,16 @@ namespace SeedVr.Remote
         private readonly ComfyUiClient _comfyUiClient;
         private readonly ComfyProgressClient _comfyProgressClient;
         private readonly ComfyWrapperClient _comfyWrapperClient;
+        private readonly WrapperProgressClient _wrapperProgressClient;
         private readonly WorkflowBuilder _workflowBuilder;
         private readonly AppSettings _appSettings;
 
-        public JobRunner(ComfyUiClient comfyUiClient, ComfyProgressClient comfyProgressClient, ComfyWrapperClient comfyWrapperClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, ComfyProgressClient comfyProgressClient, ComfyWrapperClient comfyWrapperClient, WrapperProgressClient wrapperProgressClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
             _comfyProgressClient = comfyProgressClient;
             _comfyWrapperClient = comfyWrapperClient;
+            _wrapperProgressClient = wrapperProgressClient;
             _workflowBuilder = workflowBuilder;
             _appSettings = appSettingsOptions.Value;
         }
@@ -72,7 +74,13 @@ namespace SeedVr.Remote
 
             var workflow = _workflowBuilder.GetSeedVrWorkflow(uploadedFile, jobRequest.OutputFilenamePrefix);
 
-            var success = await SubmitWorkflowToWrapper(wrapperAddress, workflow, cancellationToken);
+            var requestId = await SubmitWorkflowToWrapper(wrapperAddress, workflow, cancellationToken);
+            if (requestId == null)
+            {
+                return false;
+            }
+
+            var success = await _wrapperProgressClient.TrackJobCompletion(wrapperAddress, requestId, cancellationToken);
             return success;
         }
 
@@ -154,23 +162,29 @@ namespace SeedVr.Remote
             return submitResult.PromptId;
         }
 
-        /// <summary>Submits the workflow to the on-instance API wrapper (POST /generate); false when the submission fails.</summary>
-        private async Task<bool> SubmitWorkflowToWrapper(string wrapperBaseUrl, SeedVrWorkflow workflow, CancellationToken cancellationToken)
+        /// <summary>Submits the workflow to the on-instance API wrapper (POST /generate) and returns its request id, or null when the submission fails.</summary>
+        private async Task<string> SubmitWorkflowToWrapper(string wrapperAddress, SeedVrWorkflow workflow, CancellationToken cancellationToken)
         {
             WrapperResult result;
             try
             {
-                Log.Information("Submitting the workflow to the API wrapper (POST /generate) at {WrapperBaseUrl}...", [wrapperBaseUrl]);
-                result = await _comfyWrapperClient.Generate(wrapperBaseUrl, workflow, cancellationToken);
+                Log.Information("Submitting the workflow to the API endpoint (POST /generate) at {WrapperAddress}...", [wrapperAddress]);
+                result = await _comfyWrapperClient.Generate(wrapperAddress, workflow, cancellationToken);
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
             {
-                Log.Error(ex, "Failed to submit the workflow to the API wrapper");
-                return false;
+                Log.Error(ex, "Failed to submit the workflow to the API endpoint 'Generate'");
+                return null;
             }
 
-            Log.Information("Submitted the job to the API wrapper. request_id {RequestId}, status {Status}.", [result.Id, result.Status]);
-            return true;
+            if (result == null)
+            {
+                Log.Error("The API 'Generate' returned null instead of expected response");
+                return null;
+            }
+
+            Log.Information("Submitted the job to the API endpoint 'Generate'. request_id {RequestId}, status {Status}.", [result.Id, result.Status]);
+            return result.Id;
         }
 
         /// <summary>ComfyUI rejected one or more nodes in the workflow, so report each so the workflow can be fixed.</summary>

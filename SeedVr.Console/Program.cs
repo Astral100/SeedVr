@@ -65,6 +65,7 @@ namespace SeedVr.Console
             builder.Services.AddHttpClient<ComfyWrapperClient>();
             builder.Services.AddHttpClient<VastAiClient>();
             builder.Services.AddTransient<ComfyProgressClient>();
+            builder.Services.AddTransient<WrapperProgressClient>();
             builder.Services.AddTransient<WorkflowBuilder>();
             builder.Services.AddTransient<InstanceSelector>();
             builder.Services.AddTransient<JobRunner>();

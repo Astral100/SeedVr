@@ -16,9 +16,10 @@ instance, from which `JobOrchestrator` derives the ComfyUI and wrapper addresses
 `GetJobRequest` (resolve input, build the `JobRequest`), `UploadInputVideo` (via `ComfyUiClient.UploadVideo`) and
 the `WorkflowBuilder` patch. `StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the request's `client_id`
 and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to the wrapper
-address derived from the instance's `8288/tcp` mapping. After the raw submit, `ComfyProgressClient.TrackJobCompletion`
-watches the ComfyUI progress WebSocket and then confirms completion over `/history`, so `StartRawJob` returns only
-once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+address derived from the instance's `8288/tcp` mapping. After submitting, each path waits for the job to finish:
+`ComfyProgressClient.TrackJobCompletion` watches the raw progress WebSocket and confirms over `/history`, while
+`WrapperProgressClient.TrackJobCompletion` polls the wrapper's `/result`, so both `StartRawJob` and `StartWrapperJob`
+return only once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
@@ -36,7 +37,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 1 | Config and health check | Done, verified live |
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
-| 4 | Live progress | Raw path built (socket + /history); wrapper polling not started |
+| 4 | Live progress | Both paths built (raw: socket + /history; wrapper: /result polling); not yet verified live |
 | 5 | Download the result | Not started |
 | 6 | Remote cleanup and cancellation | Not started |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
@@ -93,6 +94,7 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 ## Unverified paths
 
 - The 404 branch in `InstanceSelector.ValidateModelsDownloaded`, for a missing `seedvr2` models folder.
+- The failure branches: only success has been seen live, so the wrapper's `failed` status and the raw path's `status_str == "error"` are guesses. A deliberate-failure run is needed to confirm both strings.
 
 ## Decisions taken
 

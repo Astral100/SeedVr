@@ -42,6 +42,16 @@
         {
             // Submits a job to the on-instance ComfyUI API wrapper and returns a request id.
             public const string GeneratePath = "generate";
+
+            // Reports a request's status and progress, keyed by the request id from /generate.
+            public const string ResultPath = "result";
+
+            // status values marking a finished request; anything else means it is still running.
+            public const string CompletedStatus = "completed";
+            public const string FailedStatus = "failed";
+
+            // How often /result is polled while the request is running.
+            public const int ResultPollSeconds = 3;
         }
 
         public static class Paths

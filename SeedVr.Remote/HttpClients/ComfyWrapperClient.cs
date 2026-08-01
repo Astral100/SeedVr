@@ -44,5 +44,12 @@ namespace SeedVr.Remote.HttpClients
             var result = await response.Content.ReadFromJsonAsync<WrapperResult>(cancellationToken);
             return result;
         }
+
+        /// <summary>The request's current state: its status and the human-readable progress message.</summary>
+        public async Task<WrapperResult> GetResult(string baseUrl, string requestId, CancellationToken cancellationToken = default)
+        {
+            var result = await _httpClient.GetFromJsonAsync<WrapperResult>($"{baseUrl}{Constants.Wrapper.ResultPath}/{requestId}", cancellationToken);
+            return result;
+        }
     }
 }
