@@ -23,7 +23,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>The ComfyUI address of the first instance that can take the job, or null when none can.</summary>
-        public async Task<string> SelectComfyUiAddress(CancellationToken cancellationToken = default)
+        public async Task<string> GetFirstAvailableInstanceAddress(CancellationToken cancellationToken = default)
         {
             var runningInstances = await GetRunningInstances(cancellationToken);
             if (runningInstances == null)
@@ -37,7 +37,7 @@ namespace SeedVr.Remote
                 return null;
             }
 
-            var availableInstance = await FindFirstAvailableInstance(runningInstances, cancellationToken);
+            var availableInstance = await GetFirstAvailableInstance(runningInstances, cancellationToken);
             if (availableInstance == null)
             {
                 return null;
@@ -45,7 +45,7 @@ namespace SeedVr.Remote
 
             Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
 
-            var comfyUiAddress = BuildComfyUiAddress(availableInstance);
+            var comfyUiAddress = availableInstance.GetComfyUiAddress();
             return comfyUiAddress;
         }
 
@@ -77,7 +77,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>The first instance that is reachable, has the models downloaded and is not busy, or null when there is none.</summary>
-        private async Task<VastAiInstance> FindFirstAvailableInstance(IReadOnlyList<VastAiInstance> instances, CancellationToken cancellationToken)
+        private async Task<VastAiInstance> GetFirstAvailableInstance(IReadOnlyList<VastAiInstance> instances, CancellationToken cancellationToken)
         {
             var unavailableInstances = new List<InstanceState>();
 
@@ -124,23 +124,24 @@ namespace SeedVr.Remote
                 return instanceState;
             }
 
-            var comfyUiAddress = GetComfyUiAddress(instance);
+            var comfyUiAddress = instance.GetComfyUiAddress();
+            Log.Information("Vast.ai instance {InstanceId} is running at {Address}", [instance.Id, comfyUiAddress]);
 
-            instanceState = await IsComfyUiReachable(comfyUiAddress, cancellationToken);
+            instanceState = await ValidateComfyUiReachable(comfyUiAddress, cancellationToken);
             if (instanceState != InstanceState.Available)
             {
                 return instanceState;
             }
 
-            var modelsDownloaded = await ValidateModelsDownloaded(comfyUiAddress, cancellationToken);
-            if (modelsDownloaded != InstanceState.Available)
+            instanceState = await ValidateModelsDownloaded(comfyUiAddress, cancellationToken);
+            if (instanceState != InstanceState.Available)
             {
-                return modelsDownloaded;
+                return instanceState;
             }
 
-            var isComfyUiAvailable = await IsComfyUiAvailable(comfyUiAddress, cancellationToken);
+            instanceState = await ValidateComfyUiAvailability(comfyUiAddress, cancellationToken);
 
-            return isComfyUiAvailable;
+            return instanceState;
         }
 
         /// <summary>Whether the instance publishes an address for ComfyUI, and why not when it does not.</summary>
@@ -148,7 +149,7 @@ namespace SeedVr.Remote
         {
             var otherPortCount = instance.Ports?.OtherPorts?.Count ?? 0;
 
-            if (!string.IsNullOrWhiteSpace(instance.PublicIpAddress) && !string.IsNullOrWhiteSpace(GetComfyUiHostPort(instance)))
+            if (!string.IsNullOrWhiteSpace(instance.PublicIpAddress) && !string.IsNullOrWhiteSpace(instance.GetComfyUiHostPort()))
             {
                 return InstanceState.Available;
             }
@@ -165,29 +166,7 @@ namespace SeedVr.Remote
             return InstanceState.Faulted;
         }
 
-        /// <summary>The instance's current ComfyUI address, logged. Only meaningful once ValidateInstanceAddress reports Available.</summary>
-        private string GetComfyUiAddress(VastAiInstance instance)
-        {
-            var comfyUiAddress = BuildComfyUiAddress(instance);
-            Log.Information("Vast.ai instance {InstanceId} is running at {Address}", [instance.Id, comfyUiAddress]);
-
-            return comfyUiAddress;
-        }
-
-        /// <summary>The instance's ComfyUI address without logging, so a caller can reuse it after evaluation.</summary>
-        private static string BuildComfyUiAddress(VastAiInstance instance)
-        {
-            var comfyUiAddress = $"http://{instance.PublicIpAddress}:{GetComfyUiHostPort(instance)}/";
-            return comfyUiAddress;
-        }
-
-        private static string GetComfyUiHostPort(VastAiInstance instance)
-        {
-            var hostPort = instance.Ports?.ComfyUi?.FirstOrDefault()?.HostPort;
-            return hostPort;
-        }
-
-        private async Task<InstanceState> IsComfyUiReachable(string comfyUiAddress, CancellationToken cancellationToken)
+        private async Task<InstanceState> ValidateComfyUiReachable(string comfyUiAddress, CancellationToken cancellationToken)
         {
             Log.Information("Checking ComfyUI instance health (GET /system_stats)...");
 
@@ -267,7 +246,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Whether the ComfyUI instance is free, so the job is not queued behind work already running on it.</summary>
-        private async Task<InstanceState> IsComfyUiAvailable(string comfyUiAddress, CancellationToken cancellationToken)
+        private async Task<InstanceState> ValidateComfyUiAvailability(string comfyUiAddress, CancellationToken cancellationToken)
         {
             Log.Information("Checking the ComfyUI job queue (GET /prompt)...");
 

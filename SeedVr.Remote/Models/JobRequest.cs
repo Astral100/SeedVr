@@ -2,7 +2,7 @@ namespace SeedVr.Remote.Models
 {
     /// <summary>One upscale job: its ids and the instance-side paths derived from the job id, so its upload
     /// and output are namespaced under jobs/&lt;job-id&gt;/ and milestone 6 can remove them by that prefix.</summary>
-    public class JobContext
+    public class JobRequest
     {
         // Names this job's folder under the instance's input and output roots. No dashes: it is a path segment.
         public string JobId { get; set; }

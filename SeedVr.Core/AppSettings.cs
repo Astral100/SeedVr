@@ -21,6 +21,7 @@ namespace SeedVr.Core
         public string AuthToken { get; set; }
 
         // The video to upscale.
+        [Required]
         public string InputVideoPath { get; set; }
 
         // The on-instance ComfyUI API wrapper's base URL, read only by the wrapper submit path. It runs on a

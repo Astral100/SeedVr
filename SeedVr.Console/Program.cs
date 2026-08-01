@@ -17,8 +17,8 @@ namespace SeedVr.Console
             try
             {
                 var app = CreateHostApp();
-                var runner = app.Services.GetRequiredService<JobRunner>();
-                var submitted = await runner.Run();
+                var runner = app.Services.GetRequiredService<JobOrchestrator>();
+                var submitted = await runner.StartJob();
                 return submitted ? 0 : 1;
             }
             catch (Exception ex)
@@ -49,8 +49,8 @@ namespace SeedVr.Console
             builder.Services.AddHttpClient<VastAiClient>();
             builder.Services.AddTransient<WorkflowBuilder>();
             builder.Services.AddTransient<InstanceSelector>();
-            builder.Services.AddTransient<JobSubmitter>();
             builder.Services.AddTransient<JobRunner>();
+            builder.Services.AddTransient<JobOrchestrator>();
 
             var app = builder.Build();
 

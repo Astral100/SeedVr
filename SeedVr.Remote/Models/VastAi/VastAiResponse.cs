@@ -24,6 +24,19 @@ namespace SeedVr.Remote.Models.VastAi
         /// <summary>Null unless the instance is running.</summary>
         [JsonPropertyName("ports")]
         public VastAiPorts Ports { get; set; }
+
+        /// <summary>The host port ComfyUI is published on, or null when the instance has not published it yet.</summary>
+        public string GetComfyUiHostPort()
+        {
+            return Ports?.ComfyUi?.FirstOrDefault()?.HostPort;
+        }
+
+        /// <summary>The instance's ComfyUI base address, built from its public IP and published ComfyUI port.</summary>
+        public string GetComfyUiAddress()
+        {
+            var hostPort = GetComfyUiHostPort();
+            return $"http://{PublicIpAddress}:{hostPort}/";
+        }
     }
 
     public class VastAiPorts

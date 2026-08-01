@@ -27,7 +27,7 @@
 
         public static class Paths
         {
-            public const string WorkflowTemplate = "workflows/SeedVR2_HD_video_upscale_api.json";
+            public const string SeedVrWorkflow = "workflows/SeedVR2_HD_video_upscale_api.json";
             public const string OutputDirectory = "videos/output";
         }
 

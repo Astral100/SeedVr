@@ -16,15 +16,15 @@ namespace SeedVr.Remote
         }
 
         /// <summary>A patched copy of the workflow for one job. The template on disk is left untouched.</summary>
-        public SeedVrWorkflow Build(string uploadedVideoFileName, string outputFilenamePrefix)
+        public SeedVrWorkflow GetSeedVrWorkflow(string uploadedVideoFileName, string outputFilenamePrefix)
         {
-            var templatePath = Path.Combine(AppContext.BaseDirectory, Constants.Paths.WorkflowTemplate);
-            var templateJson = File.ReadAllText(templatePath);
+            var workflowPath = Path.Combine(AppContext.BaseDirectory, Constants.Paths.SeedVrWorkflow);
+            var workflowString = File.ReadAllText(workflowPath);
 
-            var workflow = JsonSerializer.Deserialize<SeedVrWorkflow>(templateJson);
+            var workflow = JsonSerializer.Deserialize<SeedVrWorkflow>(workflowString);
             if (workflow == null)
             {
-                throw new InvalidOperationException($"The workflow template at '{templatePath}' parsed to null.");
+                throw new InvalidOperationException($"The SeedVr workflow at '{workflowPath}' parsed to null.");
             }
 
             workflow.LoadVideo.Inputs.File = uploadedVideoFileName;
