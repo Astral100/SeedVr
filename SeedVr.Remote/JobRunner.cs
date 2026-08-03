@@ -92,6 +92,9 @@ namespace SeedVr.Remote
                 return false;
             }
 
+            // Read indexed container metadata before submitting, so the estimator can report immediately without scanning the video.
+            var videoMetadata = await _videoProbe.GetVideoMetadata(jobRequest.LocalVideoPath, cancellationToken);
+
             var uploadedFile = await UploadInputVideo(comfyUiAddress, jobRequest, cancellationToken);
             if (uploadedFile == null)
             {
@@ -106,7 +109,8 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            var completedResult = await _wrapperProgressClient.TrackWrapperJobCompletion(wrapperAddress, requestId, cancellationToken);
+            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution);
+            var completedResult = await _wrapperProgressClient.TrackWrapperJobCompletion(comfyUiAddress, wrapperAddress, requestId, progressContext, cancellationToken);
             if (completedResult == null)
             {
                 return false;

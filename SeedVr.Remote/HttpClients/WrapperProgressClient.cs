@@ -1,27 +1,61 @@
 using System.Text.Json;
-using SeedVr.Core;
+using SeedVr.Estimators.Jobs;
+using SeedVr.Estimators.Live;
+using SeedVr.Estimators.Tracing;
 using SeedVr.Logger;
 using SeedVr.Remote.Models.Wrapper;
 
 namespace SeedVr.Remote.HttpClients
 {
-    /// <summary>Tracks a request submitted to the API wrapper to completion by polling /result for its status and progress.</summary>
+    /// <summary>Tracks a request submitted to the API wrapper to completion by polling /result, feeding the ETA
+    /// estimators from the reported percent and the instance's phase/batch log lines along the way.</summary>
     public class WrapperProgressClient
     {
         private readonly ComfyWrapperClient _comfyWrapperClient;
+        private readonly PhaseLinePoller _phaseLinePoller;
         private readonly TimeSpan _resultPollInterval;
 
-        public WrapperProgressClient(ComfyWrapperClient comfyWrapperClient)
+        public WrapperProgressClient(ComfyWrapperClient comfyWrapperClient, PhaseLinePoller phaseLinePoller)
         {
             _comfyWrapperClient = comfyWrapperClient;
+            _phaseLinePoller = phaseLinePoller;
             _resultPollInterval = TimeSpan.FromSeconds(Constants.Wrapper.ResultPollSeconds);
         }
 
-        /// <summary>Polls /result until the request finishes, reporting its progress along the way.
+        /// <summary>Waits for the request to finish, reporting progress and running the ETA estimators along the way.
         /// Returns the completed result, carrying the output file references, or null when the request failed.</summary>
-        public async Task<WrapperResult> TrackWrapperJobCompletion(string wrapperAddress, string requestId, CancellationToken cancellationToken)
+        public async Task<WrapperResult> TrackWrapperJobCompletion(string comfyUiAddress, string wrapperAddress, string requestId, JobProgressContext progressContext, CancellationToken cancellationToken)
         {
-            string lastReportedMessage = null;
+            var tracker = ProgressTracker.CreateStandard(progressContext);
+
+            var completedResult = await TrackLiveProgress(comfyUiAddress, wrapperAddress, requestId, tracker, cancellationToken);
+            var trace = tracker.Complete(completedResult != null);
+            EstimatorTraceStore.SaveForPrompt(requestId, trace);
+            return completedResult;
+        }
+
+        /// <summary>Feeds the tracker from the /result poll and the phase-line poll at once, stopping the poll once the result loop ends.</summary>
+        private async Task<WrapperResult> TrackLiveProgress(string comfyUiAddress, string wrapperAddress, string requestId, ProgressTracker tracker, CancellationToken cancellationToken)
+        {
+            // SeedVR2's phase/batch lines drive the phase-batch estimator; poll them alongside the /result loop that feeds the percent-based ones.
+            using var logCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var logPolling = _phaseLinePoller.PollPhaseLines(comfyUiAddress, tracker, logCancellation.Token);
+
+            try
+            {
+                var completedResult = await PollResultUntilComplete(wrapperAddress, requestId, tracker, cancellationToken);
+                return completedResult;
+            }
+            finally
+            {
+                await _phaseLinePoller.StopPhaseLinePolling(logCancellation, logPolling);
+            }
+        }
+
+        /// <summary>Polls /result until the request finishes, feeding each reported percent to the tracker.
+        /// The completed result when the request succeeded, null when it failed.</summary>
+        private async Task<WrapperResult> PollResultUntilComplete(string wrapperAddress, string requestId, ProgressTracker tracker, CancellationToken cancellationToken)
+        {
             while (true)
             {
                 var result = await PollResult(wrapperAddress, requestId, cancellationToken);
@@ -40,14 +74,18 @@ namespace SeedVr.Remote.HttpClients
                     return null;
                 }
 
-                // Each poll repeats the same message until progress advances, so report only when it changes.
-                if (result != null && result.Message != lastReportedMessage)
-                {
-                    Log.Information("Request {RequestId} {Status}: {Message}", [requestId, status, result.Message]);
-                    lastReportedMessage = result.Message;
-                }
-
+                RecordPercent(result, tracker);
                 await Task.Delay(_resultPollInterval, cancellationToken);
+            }
+        }
+
+        /// <summary>Feeds the percent inside the /result message to the tracker, which reports progress compactly, so the raw message stays silent.</summary>
+        private void RecordPercent(WrapperResult result, ProgressTracker tracker)
+        {
+            var percent = WrapperMessageParser.ParsePercent(result?.Message);
+            if (percent != null)
+            {
+                tracker.RecordPercent(percent.Value);
             }
         }
 

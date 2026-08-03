@@ -24,6 +24,7 @@
 
 ## Workflow
 
+- Explain the intended approach before starting any implementation; no waiting for approval, but the explanation always comes first.
 - Read `PLAN.md` before answering what is done or what is next.
 - Update `PLAN.md` with the latest project state on every change that affects the plan.
 - Do not run `dotnet build`/`run`/`test` after every small change. Batch small edits and verify once, or not at all when the change is trivially safe.

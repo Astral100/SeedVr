@@ -19,7 +19,8 @@ and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWra
 address derived from the instance's `8288/tcp` mapping. After submitting, each path waits for the job to finish:
 `ComfyProgressClient.TrackRawJobCompletion` watches the raw progress WebSocket and confirms over `/history`, while
 `WrapperProgressClient.TrackWrapperJobCompletion` polls the wrapper's `/result`, so both `StartRawJob` and `StartWrapperJob`
-return only once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. The two
+return only once the job has finished. Both trackers run the same ETA estimators: the shared `PhaseLinePoller` feeds
+phase/batch lines to each, while percent comes from the socket on the raw path and from `/result`'s message on the wrapper path. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. The two
 tracking methods return the completed `/history` entry / final `/result` (null on failure), and
 `JobRunner.DownloadJobOutputs` then streams each output over raw `/view` into `videos/output/`, mirroring the remote
 `jobs/<job-id>/` subfolder so runs never collide, via a `.part` file renamed only on success. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
@@ -42,8 +43,8 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 1 | Config and health check | Done, verified live |
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
-| 4 | Live progress | Done; raw socket/history and wrapper polling verified live |
-| 5 | Download the result | Done, verified live 03/08/2026 |
+| 4 | Live progress | Done, both paths verified live 03/08/2026 |
+| 5 | Download the result | Done, both paths verified live 03/08/2026 |
 | 6 | Remote cleanup and cancellation | Not started |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
 
@@ -70,7 +71,7 @@ Wrapper submit:
 ## Milestone 4 - live progress
 
 - Raw: WebSocket `/ws?clientId=...`, with `/history/<prompt_id>` polling as the fallback; `/history` is the authoritative completion source when the socket drops. Completion is `status.completed == true` with `status.status_str == "success"` (confirmed live).
-- Wrapper: poll `GET /result/{request_id}` (confirmed live: `status` goes `pending` -> `generating` -> `completed`, with the percent inside the human-readable `message`, e.g. "Progress: 70.0% (70/100)"), or `POST /generate/stream` for structured status (chunk format still unverified, see Open decisions).
+- Wrapper: poll `GET /result/{request_id}` (confirmed live: `status` goes `pending` -> `generating` -> `completed`, with the percent inside the human-readable `message`, e.g. "Progress: 70.0% (70/100)", parsed by `WrapperMessageParser` into the estimators). Verified live 03/08/2026 (request `0f06f4c9-dcc4-40cf-bd03-cbdaa6be622e`): 4.6s mean ETA error, matching the raw path. The `completed` status already includes remote finalization, so the completion metrics report the finalization split as zero on this path. `/generate/stream` was probed live 03/08/2026 and ruled out for progress; see Decisions taken.
 
 ## Milestone 4b - precise live ETA (experimental)
 
@@ -87,10 +88,10 @@ Model (PhaseBatchEstimator):
 - `total ~= finalization + sum(setup_phase + N x batchCost_phase x workloadScale)`; workload scale includes output area and batch size relative to the reference run.
 - Self-correct at every phase boundary; refine from batch 2 onward with clipped, confidence-weighted evidence because the first batch can carry phase-specific warmup cost.
 
-Signals (wired into the raw path; batch_size on node 10 is 33):
+Signals (wired into both paths; batch_size on node 10 is 33):
 - Frame count, width and height up front via ffprobe's indexed `nb_frames` metadata, without scanning or decoding the video. If a container does not expose usable metadata, SeedVR2's startup `Input: N frames, WxHpx` line supplies the same workload context after submission.
 - SeedVR2 stdout via `GET /internal/logs/raw`, polled every `LogPollSeconds` with its own short `LogPollTimeoutSeconds` deadline (not the control timeout), parsed by `ProgressLogParser` into video metadata and phase/batch events. Phase measurements use each log entry's UTC source timestamp, not its delayed polling receipt time, clamped so host/instance clock skew cannot date a signal into the future or before the run began. Polling is anchored to tracking start expressed in the instance's own clock, so the first response consumes current-job startup lines without replaying the pre-run buffer whatever the host/instance clock offset. `/internal/*` is "frontend use only" - fragile across ComfyUI/SeedVR2 versions, and observed to stop accepting connections mid-run under GPU load, so treat the phase-batch feed as best-effort.
-- WebSocket `value/max` (scaled to 0-100) fed to the tracker via `RecordPercent`, driving the percent-derived estimators and hybrid correction.
+- WebSocket `value/max` (scaled to 0-100) fed to the tracker via `RecordPercent`, driving the percent-derived estimators and hybrid correction. On the wrapper path the socket does not broadcast to this client, so the percent comes from `/result`'s message at the poll cadence instead.
 
 Phase structure is phase-major (all N batches per phase, then the next phase). Priors below are the current reference defaults, retuned from the three 03/08/2026 RTX 3090 runs (3B model, output ~1080x1962px, 33-frame batches):
 
@@ -119,13 +120,14 @@ Many-batch validation 03/08/2026: `[10s] cat finger shooting.mp4` produced 300 f
 
 To do:
 - Validate adaptive-hybrid across a range of lengths, aspect ratios and hosts.
+- Record the wrapper's `/result` percent only when it changes: the 3s poll currently repeats identical percents, which the rate-based estimators read as slowdowns.
 
 ## Milestone 5 - download the result
 
-Verified live 03/08/2026 (prompt `91d818ff-fbfb-4121-a301-ddbbf703da68`): the raw path downloaded the finished output to
-`videos/output/jobs/<job-id>/` with the server filename verbatim, byte count matching Content-Length. Local placement:
-`videos/output/<subfolder>/<filename>` with the server-returned values verbatim. The wrapper path's download reuses the
-same code but has not run live.
+Verified live 03/08/2026 on both paths (raw prompt `91d818ff-fbfb-4121-a301-ddbbf703da68`, wrapper request
+`0f06f4c9-dcc4-40cf-bd03-cbdaa6be622e`): the finished output downloaded to `videos/output/jobs/<job-id>/` with the
+server filename verbatim, byte count matching Content-Length. Local placement: `videos/output/<subfolder>/<filename>`
+with the server-returned values verbatim.
 
 - Raw: `GET /view?filename=&subfolder=&type=output`, built from the server-returned filename and subfolder, streamed to a `.part` file, renamed only on success. Confirmed live: `outputs["23"].images[0]` carries `filename`, `subfolder` (`jobs/<job-id>`) and `type` (`output`); ComfyUI appends its own counter and extension (`..._00001_.mp4`), so use the returned filename verbatim.
 - Wrapper: `GET /result/{request_id}` once `status == "completed"`. Confirmed live: `Result.output[]` carries `filename`, `subfolder` (`jobs/<job-id>`), `type` (`output`), `node_id` (`23`), `output_type` (`images`) and a worker `local_path`. Without an `s3` config the wrapper returns these references, not the bytes, so the download still goes through raw `/view` - or pass an `s3` config so the wrapper uploads and the URL comes back in the output (the path production needs, since a routed ephemeral worker's raw `/view` is unreachable after the fact).
@@ -140,10 +142,11 @@ same code but has not run live.
 The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload and download stream in chunks, re-arm a configurable idle deadline after each successful write and report progress on that same tick; the download requests with `HttpCompletionOption.ResponseHeadersRead` and takes its total from `Content-Length`.
 
 - Processing: re-arm on each WebSocket `progress` message, which carries `value` and `max`.
+- Bound the wrapper `/result` retry: a permanently unparseable response (e.g. future s3-mode output) currently retries forever.
 
 ## Open decisions
 
-- `/generate/stream`'s chunk format is unspecified in the openapi (empty response schema); milestone 4's wrapper path needs it pinned down against a live instance.
+- None right now.
 
 ## Unverified paths
 
@@ -160,6 +163,8 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 - The wrapper returns output as file references (`filename`/`subfolder`/`type`/`local_path`), not bytes, unless an `s3` config is passed. Production on serverless will need `s3` for both input and output delivery, since a routed ephemeral worker's raw `/view` and local disk are unreachable after the fact.
 - The API wrapper runs on container port `8288/tcp` (baked into the SeedVR2 Vast template, alongside ComfyUI's `8188/tcp`) and its proxy accepts `Bearer AuthToken`; its address resolves live from the instance's port mapping via `GetWrapperAddress`, so no wrapper URL is configured.
 - Every progress loop (raw socket, `/internal/logs/raw` poll, `/history` poll, wrapper `/result` poll) self-heals: a transient read failure or per-request timeout is logged and retried, and an unparseable socket frame is skipped. Only run cancellation stops a loop, so a mid-run proxy blip does not abandon a job still running remotely.
+- Wrapper tracking stays on `/result` polling. A one-off stream probe (run 03/08/2026, removed since; capture kept in `logs/wrapper-stream-74af0990b28347208b3447221cfe35a8.log`) pinned `/generate/stream` as SSE (`text/event-stream`, `data: {json}` events with `request_id`/`status`/`message`/`timestamp` plus queue info) that emits lifecycle transitions only: after "queued" and "processing" it stayed silent through 30s of generation while `/result` already reported 20%, so it adds nothing for progress cadence.
+- The wrapper honors a self-assigned `input.request_id` (confirmed live: events echo it and `/result/<our-id>` answered mid-run), and its "Generation started" message exposes the underlying ComfyUI prompt id - both useful for serverless correlation later; the model property was removed with the probe and can be re-added when needed.
 
 ## Deferred
 

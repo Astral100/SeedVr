@@ -10,6 +10,7 @@ namespace SeedVr.Remote
             services.AddHttpClient<ComfyUiClient>();
             services.AddHttpClient<ComfyWrapperClient>();
             services.AddHttpClient<VastAiClient>();
+            services.AddTransient<PhaseLinePoller>();
             services.AddTransient<ComfyProgressClient>();
             services.AddTransient<WrapperProgressClient>();
             services.AddTransient<WorkflowBuilder>();
