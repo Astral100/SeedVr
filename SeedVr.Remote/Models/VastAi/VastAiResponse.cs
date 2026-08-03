@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SeedVr.Core;
+using SeedVr.Remote;
 
 namespace SeedVr.Remote.Models.VastAi
 {

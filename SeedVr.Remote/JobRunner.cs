@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Estimators.Jobs;
 using SeedVr.Logger;
 using SeedVr.Remote.HttpClients;
 using SeedVr.Remote.Models;
@@ -18,15 +19,17 @@ namespace SeedVr.Remote
         private readonly ComfyWrapperClient _comfyWrapperClient;
         private readonly WrapperProgressClient _wrapperProgressClient;
         private readonly WorkflowBuilder _workflowBuilder;
+        private readonly VideoProbe _videoProbe;
         private readonly AppSettings _appSettings;
 
-        public JobRunner(ComfyUiClient comfyUiClient, ComfyProgressClient comfyProgressClient, ComfyWrapperClient comfyWrapperClient, WrapperProgressClient wrapperProgressClient, WorkflowBuilder workflowBuilder, IOptions<AppSettings> appSettingsOptions)
+        public JobRunner(ComfyUiClient comfyUiClient, ComfyProgressClient comfyProgressClient, ComfyWrapperClient comfyWrapperClient, WrapperProgressClient wrapperProgressClient, WorkflowBuilder workflowBuilder, VideoProbe videoProbe, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyUiClient = comfyUiClient;
             _comfyProgressClient = comfyProgressClient;
             _comfyWrapperClient = comfyWrapperClient;
             _wrapperProgressClient = wrapperProgressClient;
             _workflowBuilder = workflowBuilder;
+            _videoProbe = videoProbe;
             _appSettings = appSettingsOptions.Value;
         }
 
@@ -38,6 +41,9 @@ namespace SeedVr.Remote
             {
                 return false;
             }
+
+            // Read indexed container metadata before submitting, so the estimator can report immediately without scanning the video.
+            var videoMetadata = await _videoProbe.GetVideoMetadata(jobRequest.LocalVideoPath, cancellationToken);
 
             var uploadedFile = await UploadInputVideo(comfyUiAddress, jobRequest, cancellationToken);
             if (uploadedFile == null)
@@ -53,8 +59,21 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            var success = await _comfyProgressClient.TrackJobCompletion(comfyUiAddress, jobRequest.ClientId, promptId, cancellationToken);
+            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution);
+            var success = await _comfyProgressClient.TrackJobCompletion(comfyUiAddress, jobRequest.ClientId, promptId, progressContext, cancellationToken);
             return success;
+        }
+
+        /// <summary>Builds the estimators' job context from local metadata, or an empty context that SeedVR2 startup logs can complete.</summary>
+        private JobProgressContext GetProgressContext(VideoMetadata videoMetadata, int batchSize, int targetResolution)
+        {
+            if (videoMetadata == null)
+            {
+                Log.Warning("Fast local video metadata is unavailable; ETA will initialize when SeedVR2 reports the input dimensions.");
+                return new JobProgressContext(0, batchSize, 0, 0, targetResolution);
+            }
+
+            return new JobProgressContext(videoMetadata.FrameCount, batchSize, videoMetadata.Width, videoMetadata.Height, targetResolution);
         }
 
         /// <summary>Uploads through raw ComfyUI, then submits the same workflow to the on-instance API wrapper instead of /prompt.</summary>
@@ -112,11 +131,11 @@ namespace SeedVr.Remote
         /// <summary>Uploads the input video into the job's subfolder and returns the reference ComfyUI stored it under, or null on failure.</summary>
         private async Task<string> UploadInputVideo(string comfyUiAddress, JobRequest jobRequest, CancellationToken cancellationToken)
         {
-            ComfyUiUploadResult upload;
+            ComfyUiUploadResult uploadResult;
             try
             {
                 Log.Information("Uploading the input video to the instance (POST /upload/image) under {Subfolder}: {Path}", [jobRequest.UploadSubfolder, jobRequest.LocalVideoPath]);
-                upload = await _comfyUiClient.UploadVideo(comfyUiAddress, jobRequest.LocalVideoPath, jobRequest.UploadSubfolder, cancellationToken);
+                uploadResult = await _comfyUiClient.UploadVideo(comfyUiAddress, jobRequest.LocalVideoPath, jobRequest.UploadSubfolder, cancellationToken);
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
@@ -125,7 +144,7 @@ namespace SeedVr.Remote
             }
 
             // ComfyUI addresses a subfoldered upload as "<subfolder>/<name>"; without a subfolder it is just the name.
-            var uploadedFile = string.IsNullOrEmpty(upload.Subfolder) ? upload.Name : $"{upload.Subfolder}/{upload.Name}";
+            var uploadedFile = string.IsNullOrEmpty(uploadResult.Subfolder) ? uploadResult.Name : $"{uploadResult.Subfolder}/{uploadResult.Name}";
             Log.Information("Uploaded input video; ComfyUI stored it as {Name}.", [uploadedFile]);
 
             return uploadedFile;
@@ -200,7 +219,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>One node error as "message (details)", dropping the details when ComfyUI left them empty.</summary>
-        private static string FormatNodeError(NodeErrorDetail error)
+        private string FormatNodeError(NodeErrorDetail error)
         {
             if (string.IsNullOrEmpty(error.Details))
             {

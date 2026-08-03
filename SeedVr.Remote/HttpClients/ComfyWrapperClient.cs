@@ -11,12 +11,14 @@ namespace SeedVr.Remote.HttpClients
     public class ComfyWrapperClient
     {
         private readonly HttpClient _httpClient;
+        private readonly TimeSpan _controlTimeout;
 
         public ComfyWrapperClient(HttpClient httpClient, IOptions<AppSettings> appSettingsOptions)
         {
             var appSettings = appSettingsOptions.Value;
 
             _httpClient = httpClient;
+            _controlTimeout = TimeSpan.FromSeconds(appSettings.HttpTimeoutSeconds);
 
             // Like the raw client, submissions run far longer than a control call; deadlines are set per request.
             _httpClient.Timeout = Timeout.InfiniteTimeSpan;
@@ -48,7 +50,12 @@ namespace SeedVr.Remote.HttpClients
         /// <summary>The request's current state: its status and the human-readable progress message.</summary>
         public async Task<WrapperResult> GetResult(string baseUrl, string requestId, CancellationToken cancellationToken = default)
         {
-            var result = await _httpClient.GetFromJsonAsync<WrapperResult>($"{baseUrl}{Constants.Wrapper.ResultPath}/{requestId}", cancellationToken);
+            // A control-call deadline, not the infinite client timeout: this poll fires every few seconds, so a stuck request must
+            // fail fast and let the caller retry rather than block the poll loop forever.
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_controlTimeout);
+
+            var result = await _httpClient.GetFromJsonAsync<WrapperResult>($"{baseUrl}{Constants.Wrapper.ResultPath}/{requestId}", timeoutSource.Token);
             return result;
         }
     }

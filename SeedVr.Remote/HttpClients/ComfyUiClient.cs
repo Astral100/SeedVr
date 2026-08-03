@@ -12,6 +12,8 @@ namespace SeedVr.Remote.HttpClients
     {
         private readonly HttpClient _httpClient;
         private readonly TimeSpan _controlTimeout;
+        private readonly TimeSpan _logPollTimeout;
+        private readonly TimeSpan _transferIdleTimeout;
 
         public ComfyUiClient(HttpClient httpClient, IOptions<AppSettings> appSettingsOptions)
         {
@@ -19,6 +21,8 @@ namespace SeedVr.Remote.HttpClients
 
             _httpClient = httpClient;
             _controlTimeout = TimeSpan.FromSeconds(appSettings.HttpTimeoutSeconds);
+            _logPollTimeout = TimeSpan.FromSeconds(Constants.ComfyUi.LogPollTimeoutSeconds);
+            _transferIdleTimeout = TimeSpan.FromSeconds(appSettings.TransferIdleTimeoutSeconds);
 
             // Uploads and downloads run far longer than a control call, and HttpClient.Timeout is a
             // ceiling no caller can raise. Deadlines are set per request instead.
@@ -30,12 +34,12 @@ namespace SeedVr.Remote.HttpClients
             }
         }
 
-        public async Task<string> GetSystemStats(string baseUrl, CancellationToken cancellationToken = default)
+        public async Task<ComfyUiSystemStats> GetSystemStats(string baseUrl, CancellationToken cancellationToken = default)
         {
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(_controlTimeout);
 
-            var systemStats = await _httpClient.GetStringAsync($"{baseUrl}{Constants.ComfyUi.SystemStatsPath}", timeoutSource.Token);
+            var systemStats = await _httpClient.GetFromJsonAsync<ComfyUiSystemStats>($"{baseUrl}{Constants.ComfyUi.SystemStatsPath}", timeoutSource.Token);
             return systemStats;
         }
 
@@ -74,13 +78,23 @@ namespace SeedVr.Remote.HttpClients
             return null;
         }
 
+        /// <summary>The recent ComfyUI console buffer (GET /internal/logs/raw), carrying SeedVR2's phase/batch prints.</summary>
+        public async Task<ComfyUiLogs> GetConsoleLogs(string baseUrl, CancellationToken cancellationToken = default)
+        {
+            // A short deadline, not the control timeout: this poll fires every couple of seconds, so a stuck request must skip fast rather than block the feed.
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_logPollTimeout);
+
+            var logs = await _httpClient.GetFromJsonAsync<ComfyUiLogs>($"{baseUrl}{Constants.ComfyUi.LogsRawPath}", timeoutSource.Token);
+            return logs;
+        }
+
         /// <summary>Uploads the local video into the instance's input folder under the given subfolder and returns where ComfyUI stored it.</summary>
         public async Task<ComfyUiUploadResult> UploadVideo(string baseUrl, string localVideoPath, string subfolder, CancellationToken cancellationToken = default)
         {
-            // No control timeout: an upload runs far longer than a control call, so it uses the caller's token only.
-            await using var fileStream = File.OpenRead(localVideoPath);
+            // No total timeout: each successfully written chunk re-arms the idle deadline, so long active uploads can finish.
             using var content = new MultipartFormDataContent();
-            using var fileContent = new StreamContent(fileStream);
+            using var fileContent = new ProgressStreamContent(localVideoPath, _transferIdleTimeout, cancellationToken);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
             var fileName = Path.GetFileName(localVideoPath);
@@ -92,7 +106,7 @@ namespace SeedVr.Remote.HttpClients
                 content.Add(new StringContent(subfolder), "subfolder");
             }
 
-            var response = await _httpClient.PostAsync($"{baseUrl}{Constants.ComfyUi.UploadImagePath}", content, cancellationToken);
+            using var response = await _httpClient.PostAsync($"{baseUrl}{Constants.ComfyUi.UploadImagePath}", content, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadFromJsonAsync<ComfyUiUploadResult>(cancellationToken);
@@ -108,7 +122,7 @@ namespace SeedVr.Remote.HttpClients
                 ClientId = clientId
             };
 
-            var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{Constants.ComfyUi.PromptPath}", request, cancellationToken);
+            using var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{Constants.ComfyUi.PromptPath}", request, cancellationToken);
 
             // ComfyUI rejects an invalid workflow with 400 and a JSON body carrying node_errors; read that
             // body instead of throwing, so the caller can report which node was refused. A 400 from the proxy

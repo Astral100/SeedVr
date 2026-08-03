@@ -172,7 +172,21 @@ namespace SeedVr.Remote
             try
             {
                 var stats = await _comfyUiClient.GetSystemStats(comfyUiAddress, cancellationToken);
-                Log.Information("ComfyUI is reachable. /system_stats response: {Stats}", [stats]);
+                if (stats == null)
+                {
+                    Log.Warning("ComfyUI returned an empty /system_stats response.");
+                    return InstanceState.Faulted;
+                }
+
+                var system = stats.System;
+                Log.Information("ComfyUI is reachable: version {Version}, OS {Os}, RAM {FreeRam:F1}/{TotalRam:F1} GiB free.", [system.ComfyUiVersion, system.Os, ToGigabytes(system.RamFree), ToGigabytes(system.RamTotal)]);
+
+                var device = stats.Devices.FirstOrDefault();
+                if (device != null)
+                {
+                    Log.Information("ComfyUI device: {Name} ({Type}), VRAM {FreeVram:F1}/{TotalVram:F1} GiB free.", [device.Name, device.Type, ToGigabytes(device.VramFree), ToGigabytes(device.VramTotal)]);
+                }
+
                 return InstanceState.Available;
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -202,9 +216,14 @@ namespace SeedVr.Remote
         }
 
         /// <summary>A gateway status comes from the reverse proxy, not ComfyUI, so the backend is still starting up rather than broken.</summary>
-        private static bool IsComfyUiStillStarting(HttpStatusCode? statusCode)
+        private bool IsComfyUiStillStarting(HttpStatusCode? statusCode)
         {
             return statusCode == HttpStatusCode.BadGateway || statusCode == HttpStatusCode.ServiceUnavailable || statusCode == HttpStatusCode.GatewayTimeout;
+        }
+
+        private double ToGigabytes(long bytes)
+        {
+            return bytes / 1024.0 / 1024.0 / 1024.0;
         }
 
         private async Task<InstanceState> ValidateModelsDownloaded(string comfyUiAddress, CancellationToken cancellationToken)

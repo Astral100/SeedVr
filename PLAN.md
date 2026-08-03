@@ -23,6 +23,8 @@ return only once the job has finished. `StartJob` calls the raw path; switch to 
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
+`SeedVr.Remote` owns its HTTP-client and orchestration registrations through `AddSeedVrRemote`; the console composition root owns configuration and calls that extension. Remote protocol/path constants and estimator calibration constants live in their owning projects, leaving `SeedVr.Core` for shared configuration. The ComfyUI health check deserializes `/system_stats` and logs a compact version, RAM and GPU/VRAM summary rather than the full response.
+
 The raw path ran end-to-end against a rented instance: instance gating, upload into `jobs/<job-id>/`, patch and
 `POST /prompt` to a queued `prompt_id`, then the job ran to `status_str: success`. Both sides of the `jobs/<job-id>/`
 namespacing, the mixed `[string, int]` `NodeLink` form and the `node_errors` 400 shape are confirmed live; a uniform
@@ -37,7 +39,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 1 | Config and health check | Done, verified live |
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
-| 4 | Live progress | Both paths built (raw: socket + /history; wrapper: /result polling); not yet verified live |
+| 4 | Live progress | Done; raw socket/history and wrapper polling verified live |
 | 5 | Download the result | Not started |
 | 6 | Remote cleanup and cancellation | Not started |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
@@ -67,6 +69,54 @@ Wrapper submit:
 - Raw: WebSocket `/ws?clientId=...`, with `/history/<prompt_id>` polling as the fallback; `/history` is the authoritative completion source when the socket drops. Completion is `status.completed == true` with `status.status_str == "success"` (confirmed live).
 - Wrapper: poll `GET /result/{request_id}` (confirmed live: `status` goes `pending` -> `generating` -> `completed`, with the percent inside the human-readable `message`, e.g. "Progress: 70.0% (70/100)"), or `POST /generate/stream` for structured status (chunk format still unverified, see Open decisions).
 
+## Milestone 4b - precise live ETA (experimental)
+
+Goal: a precise progress bar / ETA to remote job completion. Adaptive-hybrid is the sole live estimator behind `IProgressEstimator` (`Update(ProgressSample) -> EtaEstimate`); `ProgressTracker` feeds it each sample, reports compact progress at 10-point intervals, records a replayable JSON trace and scores the completed run. Estimators are stateful (each IS a run model, the noted exception to the stateless rule).
+
+The comparison implementations remain available for historical evaluation and focused tests; adaptive-hybrid composes the phase and percent models internally. The evaluated approaches were:
+- `NaiveLinearEstimator` - `total = elapsed / fractionDone`. Percent only. The baseline to beat.
+- `PercentDemaEstimator` - clipped double-EMA of percent/sec, extrapolated. Percent only; abrupt phase-rate changes are bounded.
+- `PhaseBatchEstimator` - the phase model below; needs video metadata + stdout phase/batch lines. Completed-phase speed cautiously scales unseen phase priors within bounded limits.
+- `AdaptiveHybridEstimator` - starts from phase/batch priors, then progressively blends in the host's percent-implied completion time; phase-only events retain the latest percent evidence.
+
+Model (PhaseBatchEstimator):
+- `N = ceil(frameCount / batchSize)`. SeedVR2 pads every batch to a uniform size (`Sequence of 32 frames` -> `Padding batch: 1 frame added (32 -> 33)`), so cost scales with padded batches, not raw frames. A raw-frame model badly mis-estimates short clips: a barely-filled last batch still costs a full batch (34 frames = 2 full batches = same cost as 64).
+- `total ~= finalization + sum(setup_phase + N x batchCost_phase x workloadScale)`; workload scale includes output area and batch size relative to the reference run.
+- Self-correct at every phase boundary; refine from batch 2 onward with clipped, confidence-weighted evidence because the first batch can carry phase-specific warmup cost.
+
+Signals (wired into the raw path; batch_size on node 10 is 33):
+- Frame count, width and height up front via ffprobe's indexed `nb_frames` metadata, without scanning or decoding the video. If a container does not expose usable metadata, SeedVR2's startup `Input: N frames, WxHpx` line supplies the same workload context after submission.
+- SeedVR2 stdout via `GET /internal/logs/raw`, polled every `LogPollSeconds` with its own short `LogPollTimeoutSeconds` deadline (not the control timeout), parsed by `ProgressLogParser` into video metadata and phase/batch events. Phase measurements use each log entry's UTC source timestamp, not its delayed polling receipt time, clamped so host/instance clock skew cannot date a signal into the future or before the run began. Polling is anchored to tracking start expressed in the instance's own clock, so the first response consumes current-job startup lines without replaying the pre-run buffer whatever the host/instance clock offset. `/internal/*` is "frontend use only" - fragile across ComfyUI/SeedVR2 versions, and observed to stop accepting connections mid-run under GPU load, so treat the phase-batch feed as best-effort.
+- WebSocket `value/max` (scaled to 0-100) fed to the tracker via `RecordPercent`, driving the percent-derived estimators and hybrid correction.
+
+Phase structure is phase-major (all N batches per phase, then the next phase). Priors below are the current reference defaults, retuned from the three 03/08/2026 RTX 3090 runs (3B model, output ~1080x1962px, 33-frame batches):
+
+| Phase | WS % band | Setup prior | Per-batch prior |
+| ----- | --------- | ----------- | --------------- |
+| 1 Encoding | 0-20% | ~3.2s | ~20.5s |
+| 2 DiT upscaling | 20-45% | ~1s | ~23.75s |
+| 3 VAE decoding | 45-95% | ~0.3s | ~48s (dominant) |
+| 4 Post-processing | 95-100% | 0s | ~5s |
+
+Every estimator adds a remote-finalization allowance after SeedVR2 reaches 100%. Five live traces fit this as ~3.5s fixed coordination overhead plus ~0.1885s per frame scaled by output area. `Average FPS` prints only at the end, so it cannot seed a live ETA.
+
+The 03/08 runs are materially variable at the same workload (~200s, ~217s and ~227s to remote completion), so fixed priors use the stable middle and completed-phase measurements learn a strongly shrunk, bounded run-speed factor. Two parser false positives were fixed: only `Phase N:` headers and `batch k/N` lines are treated as markers, so prose like `Starting upscaling generation`, `Upscaling completed successfully!` and the `...VideoUpscaler` URL no longer trigger a phase change.
+
+Run 2 completed in ~185s from estimator anchor to SeedVR2 100% and ~200s to remote history success. Its direct timestamps showed encoding as ~2s setup + two ~19.5s batches, not the old ~25s setup + 6s/batch decomposition; DiT measured ~21.4s/batch, VAE ~46.0s/batch and post-processing ~5.1s/batch.
+
+Instrumentation: the tracker clock anchors to the first live signal (excludes queue wait), keeps phase measurements and every prediction in the trace, and warns on percent regression. The console shows only human-readable elapsed/remaining/estimated-total progress and a completion summary; raw socket values, phase lines and estimator refinements stay silent. A completed run writes `logs/estimator-<prompt-id>.json` with receipt and source timing, every signal and prediction. `EstimatorEvaluator` scores adaptive-hybrid at every unique nonterminal percent checkpoint, reporting the mean and worst ETA error over those checkpoints. Historical prediction dictionaries remain in the trace schema so saved comparison traces still replay. Replay without Vast.ai: `dotnet run --project SeedVr.Console -- --score-estimator-trace <path>`.
+
+Live verification 03/08/2026: prompt `7cc1db2f-a0d2-488a-9353-5db1edcd18ae` completed successfully in ~216.6s from the estimator anchor. Its first DiT batch took ~38.7s but its second took ~18.1s, confirming that a lone completed batch must not replace the phase rate or strongly scale unrelated phases. After clipping/confidence weighting that signal and bounding hybrid disagreement, final offline replay ranks adaptive-hybrid first on both saved full traces: 2.1s/2.4s common-checkpoint MAE and 6.1s/5.4s all-event maximum jump; phase-batch follows at 4.4s/4.0s MAE.
+
+Final live validation 03/08/2026: prompt `72adcfd2-ccba-4d27-8aea-48a6405b952f` completed successfully in ~217.3s from the estimator anchor, including 14.8s remote finalization. Adaptive-hybrid ranked first live with 1.3s common-checkpoint MAE, +0.2s bias, 2.6s worst error and a 6.4s all-event maximum jump. Phase-batch followed at 2.5s MAE and a 4.2s maximum jump. The clipped batch-2 refinement held the repeated ~38.6s first DiT batch to a ~4s total-prediction adjustment instead of the previous ~50s jump. The back-to-back same-instance runs completed in ~216.6s and ~217.3s, establishing stable warm-instance throughput.
+
+One-batch validation 03/08/2026: `[01s] cat finger shooting.mp4` produced 32 frames and prompt `16951c75-d890-4f3a-911c-adad7f5bdb12` completed successfully in ~111.8s from the estimator anchor. Remote finalization was 7.9s versus ~15.8s for 62 frames, confirming frame-proportional output assembly. With the five-trace finalization fit, offline replay gives phase-batch 3.4s, frame-linear 3.5s and adaptive-hybrid 3.8s common-checkpoint MAE; the short trace has only two common checkpoints.
+
+Many-batch validation 03/08/2026: `[10s] cat finger shooting.mp4` produced 300 frames / 10 padded batches and prompt `d4cd2660-4682-48c6-b480-fc7a0c1d8a3d` completed successfully in ~1005.6s (15:45.8 processing + 59.9s remote finalization). With the live run's original zero-intercept finalization model, adaptive-hybrid and phase-batch ranked first at 22.0s/22.2s common-checkpoint MAE over 33 checkpoints; naive-linear scored 30.9s, frame-linear 33.9s and percent-DEMA 48.4s. Encoding measured 3.8s + 19.6s/batch, DiT 0.1s + 22.6s/batch, VAE ~47.0s/batch and post-processing ~5.0s/batch, validating the setup/per-batch decomposition and batch 3+ refinement. The prior finalization model predicted 75.1s; fitting a fixed overhead plus per-frame cost across all five traces predicts 60.1s for this run while retaining ~9.5s/15.2s for 32/62 frames. Offline replay with that fit reduces phase-batch/hybrid MAE to 10.0s/10.4s; hybrid remains the aggregate winner across all 53 common checkpoints, while phase-batch narrowly wins this long trace.
+
+To do:
+- Validate adaptive-hybrid across a range of lengths, aspect ratios and hosts.
+
 ## Milestone 5 - download the result
 
 - Raw: `GET /view?filename=&subfolder=&type=output`, built from the server-returned filename and subfolder, streamed to a `.part` file, renamed only on success. Confirmed live: `outputs["23"].images[0]` carries `filename`, `subfolder` (`jobs/<job-id>`) and `type` (`output`); ComfyUI appends its own counter and extension (`..._00001_.mp4`), so use the returned filename verbatim.
@@ -79,11 +129,8 @@ Wrapper submit:
 
 ## Milestone 7 - timeouts and progress
 
-The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. The transfer calls still need theirs.
+The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload streams in chunks, re-arms a configurable idle deadline after each successful write and reports progress on that same tick. Download must use the same policy when milestone 5 adds its transfer path.
 
-- Give transfers an idle deadline: re-arm `CancelAfter` on each chunk, so a stall fails fast while a long transfer does not.
-- Report progress from the same tick that re-arms the timer.
-- Upload: wrap the `FileStream` in a counting `Stream`; the total comes from the file length.
 - Download: request with `HttpCompletionOption.ResponseHeadersRead` and copy in chunks; the total comes from `Content-Length`.
 - Processing: re-arm on each WebSocket `progress` message, which carries `value` and `max`.
 
@@ -105,10 +152,10 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 - `ComfyUiSubmitResult`'s `node_errors` shape (`class_type`, `errors[].message`/`details`) is confirmed against a live 400.
 - The wrapper returns output as file references (`filename`/`subfolder`/`type`/`local_path`), not bytes, unless an `s3` config is passed. Production on serverless will need `s3` for both input and output delivery, since a routed ephemeral worker's raw `/view` and local disk are unreachable after the fact.
 - The API wrapper runs on container port `8288/tcp` (baked into the SeedVR2 Vast template, alongside ComfyUI's `8188/tcp`) and its proxy accepts `Bearer AuthToken`; its address resolves live from the instance's port mapping via `GetWrapperAddress`, so no wrapper URL is configured.
+- Every progress loop (raw socket, `/internal/logs/raw` poll, `/history` poll, wrapper `/result` poll) self-heals: a transient read failure or per-request timeout is logged and retried, and an unparseable socket frame is skipped. Only run cancellation stops a loop, so a mid-run proxy blip does not abandon a job still running remotely.
 
 ## Deferred
 
 - Silence the `IHttpClientFactory` info logs: `"System.Net.Http.HttpClient": "Warning"` under `Logging:LogLevel`.
 - The first port binding wins when an instance returns several.
-- `/system_stats` logs its full body at Information.
 - `SeedVr.Remote.Tests` is inert: it has no reference to `SeedVr.Remote`, only an empty `Test1`.

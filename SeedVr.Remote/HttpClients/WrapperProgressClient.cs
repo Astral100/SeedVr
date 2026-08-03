@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SeedVr.Core;
 using SeedVr.Logger;
 using SeedVr.Remote.Models.Wrapper;
@@ -22,7 +23,7 @@ namespace SeedVr.Remote.HttpClients
             string lastReportedMessage = null;
             while (true)
             {
-                var result = await _comfyWrapperClient.GetResult(wrapperAddress, requestId, cancellationToken);
+                var result = await PollResult(wrapperAddress, requestId, cancellationToken);
 
                 var status = result?.Status;
 
@@ -46,6 +47,28 @@ namespace SeedVr.Remote.HttpClients
                 }
 
                 await Task.Delay(_resultPollInterval, cancellationToken);
+            }
+        }
+
+        /// <summary>Reads the request's /result, treating a transient read failure as "no update this tick" so a network blip or a
+        /// timed-out poll does not abort a request that is still running. The loop retries on the next interval.</summary>
+        private async Task<WrapperResult> PollResult(string wrapperAddress, string requestId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _comfyWrapperClient.GetResult(wrapperAddress, requestId, cancellationToken);
+                return result;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // A per-request control timeout fired, not the run's cancellation, so skip this poll and keep tracking.
+                Log.Warning("The wrapper /result poll timed out; retrying on the next interval.");
+                return null;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException)
+            {
+                Log.Warning(ex, "The wrapper /result poll failed; retrying on the next interval.");
+                return null;
             }
         }
     }

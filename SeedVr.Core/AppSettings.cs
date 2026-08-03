@@ -33,5 +33,8 @@ namespace SeedVr.Core
 
         [Range(1, 3600)]
         public int HttpTimeoutSeconds { get; set; }
+
+        [Range(1, 3600)]
+        public int TransferIdleTimeoutSeconds { get; set; }
     }
 }

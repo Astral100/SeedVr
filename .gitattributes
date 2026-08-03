@@ -2,7 +2,7 @@
 * text=auto
 
 # Explicit text types
-*.cs        text diff=csharp
+*.cs        text eol=crlf diff=csharp
 *.csproj    text
 *.sln       text eol=crlf
 *.json      text

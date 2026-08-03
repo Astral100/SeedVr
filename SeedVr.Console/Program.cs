@@ -1,10 +1,12 @@
 using SeedVr.Remote;
-using SeedVr.Remote.HttpClients;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SeedVr.Core;
+using SeedVr.Estimators.Live;
+using SeedVr.Estimators.Scoring;
+using SeedVr.Estimators.Tracing;
 using SeedVr.Logger;
 
 namespace SeedVr.Console
@@ -25,6 +27,11 @@ namespace SeedVr.Console
 
             try
             {
+                if (args.Length == 2 && args[0] == "--score-estimator-trace")
+                {
+                    return ScoreEstimatorTrace(args[1]);
+                }
+
                 var app = CreateHostApp();
                 var orchestrator = app.Services.GetRequiredService<JobOrchestrator>();
                 var success = await orchestrator.StartJob(cancellation.Token);
@@ -47,6 +54,17 @@ namespace SeedVr.Console
             }
         }
 
+        /// <summary>Replays a saved run through adaptive-hybrid without contacting Vast.ai.</summary>
+        private static int ScoreEstimatorTrace(string path)
+        {
+            var trace = EstimatorTraceStore.Load(Path.GetFullPath(path));
+            var score = EstimatorEvaluator.Score(trace);
+            var reporter = new ProgressReporter();
+            reporter.ReportCompletion(trace, score);
+
+            return 0;
+        }
+
         private static IHost CreateHostApp()
         {
             // Pin the content root to the app's own directory so appsettings load from where they are copied,
@@ -61,15 +79,7 @@ namespace SeedVr.Console
                 .BindConfiguration(AppSettings.ConfigurationSection)
                 .ValidateDataAnnotations();
 
-            builder.Services.AddHttpClient<ComfyUiClient>();
-            builder.Services.AddHttpClient<ComfyWrapperClient>();
-            builder.Services.AddHttpClient<VastAiClient>();
-            builder.Services.AddTransient<ComfyProgressClient>();
-            builder.Services.AddTransient<WrapperProgressClient>();
-            builder.Services.AddTransient<WorkflowBuilder>();
-            builder.Services.AddTransient<InstanceSelector>();
-            builder.Services.AddTransient<JobRunner>();
-            builder.Services.AddTransient<JobOrchestrator>();
+            builder.Services.AddSeedVrRemote();
 
             var app = builder.Build();
 

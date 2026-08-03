@@ -4,12 +4,16 @@
 - Every method has a braced body. Never use expression-bodied methods (`=>`).
 - Keep statements and signatures on one line, unless the line is genuinely long or the signature has many parameters.
 - Compare strings with `==` and `!=`. Never `string.Equals`, and no `ToLower`/`ToUpper` unless genuinely necessary.
+- Don't use `string.Compare`/`string.CompareOrdinal` unless a case genuinely requires it.
 - Every enum declares `Unknown` first, so the default value is never a real state.
 - Don't inline a non-trivial or `await`ed call into a `return` — assign it to a variable first. Do return a simple synchronous expression (member/null-conditional chain, interpolation, comparison, trivial call like `FirstOrDefault()`) directly, never through a throwaway variable.
 - Only 9.x NuGet packages.
 - Prefer `GetFromJsonAsync`/`ReadFromJsonAsync` over reading streams and calling `JsonSerializer` by hand.
+- Deserialize JSON into typed models (`GetFromJsonAsync`/`JsonSerializer.Deserialize<T>`); never navigate a `JsonDocument`/`JsonNode`/`JsonElement` by hand.
 - Keep methods stateless: return a value rather than mutating another object, and pass what a method needs explicitly.
-- Values that are not genuinely configurable belong in `Constants`, not `AppSettings`.
+- Private helpers stay instance methods, never `static`, unless the whole class is `static`.
+- Every hardcoded line or constant lives in the project's `Constants` file, except genuinely configurable values, which live in `appsettings.json`.
+- Do not enable nullable reference types (`<Nullable>enable</Nullable>`). Leave it off in every project.
 - Catch only the exceptions you can describe accurately. No catch-all handlers outside `Program.Main`.
 
 ## Commit messages
