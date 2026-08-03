@@ -20,6 +20,7 @@
 
 - Past tense: "Added", "Removed", "Moved" - not "Add"/"Remove"/"Move".
 - Each `-` bullet on a single line. Shorten the wording rather than wrapping it.
+- For new files, state the end result, not the steps that built it. Narrate steps only for edits to tracked files.
 
 ## Workflow
 

@@ -17,9 +17,12 @@ instance, from which `JobOrchestrator` derives the ComfyUI and wrapper addresses
 the `WorkflowBuilder` patch. `StartRawJob` submits over `ComfyUiClient.SubmitPrompt` with the request's `client_id`
 and reports `node_errors` on rejection; `StartWrapperJob` submits over `ComfyWrapperClient.Generate` to the wrapper
 address derived from the instance's `8288/tcp` mapping. After submitting, each path waits for the job to finish:
-`ComfyProgressClient.TrackJobCompletion` watches the raw progress WebSocket and confirms over `/history`, while
-`WrapperProgressClient.TrackJobCompletion` polls the wrapper's `/result`, so both `StartRawJob` and `StartWrapperJob`
-return only once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+`ComfyProgressClient.TrackRawJobCompletion` watches the raw progress WebSocket and confirms over `/history`, while
+`WrapperProgressClient.TrackWrapperJobCompletion` polls the wrapper's `/result`, so both `StartRawJob` and `StartWrapperJob`
+return only once the job has finished. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. The two
+tracking methods return the completed `/history` entry / final `/result` (null on failure), and
+`JobRunner.DownloadJobOutputs` then streams each output over raw `/view` into `videos/output/`, mirroring the remote
+`jobs/<job-id>/` subfolder so runs never collide, via a `.part` file renamed only on success. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
@@ -40,7 +43,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 2 | Instance readiness check | Done, verified live 28/07/2026 |
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
 | 4 | Live progress | Done; raw socket/history and wrapper polling verified live |
-| 5 | Download the result | Not started |
+| 5 | Download the result | Done, verified live 03/08/2026 |
 | 6 | Remote cleanup and cancellation | Not started |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
 
@@ -119,6 +122,11 @@ To do:
 
 ## Milestone 5 - download the result
 
+Verified live 03/08/2026 (prompt `91d818ff-fbfb-4121-a301-ddbbf703da68`): the raw path downloaded the finished output to
+`videos/output/jobs/<job-id>/` with the server filename verbatim, byte count matching Content-Length. Local placement:
+`videos/output/<subfolder>/<filename>` with the server-returned values verbatim. The wrapper path's download reuses the
+same code but has not run live.
+
 - Raw: `GET /view?filename=&subfolder=&type=output`, built from the server-returned filename and subfolder, streamed to a `.part` file, renamed only on success. Confirmed live: `outputs["23"].images[0]` carries `filename`, `subfolder` (`jobs/<job-id>`) and `type` (`output`); ComfyUI appends its own counter and extension (`..._00001_.mp4`), so use the returned filename verbatim.
 - Wrapper: `GET /result/{request_id}` once `status == "completed"`. Confirmed live: `Result.output[]` carries `filename`, `subfolder` (`jobs/<job-id>`), `type` (`output`), `node_id` (`23`), `output_type` (`images`) and a worker `local_path`. Without an `s3` config the wrapper returns these references, not the bytes, so the download still goes through raw `/view` - or pass an `s3` config so the wrapper uploads and the URL comes back in the output (the path production needs, since a routed ephemeral worker's raw `/view` is unreachable after the fact).
 
@@ -129,9 +137,8 @@ To do:
 
 ## Milestone 7 - timeouts and progress
 
-The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload streams in chunks, re-arms a configurable idle deadline after each successful write and reports progress on that same tick. Download must use the same policy when milestone 5 adds its transfer path.
+The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload and download stream in chunks, re-arm a configurable idle deadline after each successful write and report progress on that same tick; the download requests with `HttpCompletionOption.ResponseHeadersRead` and takes its total from `Content-Length`.
 
-- Download: request with `HttpCompletionOption.ResponseHeadersRead` and copy in chunks; the total comes from `Content-Length`.
 - Processing: re-arm on each WebSocket `progress` message, which carries `value` and `max`.
 
 ## Open decisions

@@ -9,6 +9,7 @@ namespace SeedVr.Remote
             public const string PromptPath = "prompt";
             public const string UploadImagePath = "upload/image";
             public const string HistoryPath = "history";
+            public const string ViewPath = "view";
             public const string WebSocketPath = "ws";
             public const string SeedVrModelFolder = "seedvr2";
             public const string JobRootPrefix = "jobs";
@@ -57,6 +58,7 @@ namespace SeedVr.Remote
 
         public static class Transfer
         {
+            public const string PartFileSuffix = ".part";
             public const int BufferSize = 81920;
             public const int ProgressPercentInterval = 10;
         }

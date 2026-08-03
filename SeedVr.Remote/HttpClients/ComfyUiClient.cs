@@ -113,6 +113,33 @@ namespace SeedVr.Remote.HttpClients
             return result;
         }
 
+        /// <summary>Downloads one finished output (GET /view) to the local path, streaming to a .part file that is renamed only on success.</summary>
+        public async Task DownloadOutput(string baseUrl, ComfyUiOutputFile outputFile, string localPath, CancellationToken cancellationToken = default)
+        {
+            // The filename and subfolder come back from the server verbatim; the filename can carry spaces and brackets, so escape each value.
+            var query = $"filename={Uri.EscapeDataString(outputFile.Filename)}&subfolder={Uri.EscapeDataString(outputFile.Subfolder ?? string.Empty)}&type={Uri.EscapeDataString(outputFile.Type ?? string.Empty)}";
+
+            // Headers first, so the body streams instead of buffering. Only this phase runs under the control timeout: the source is
+            // disposed before the copy, so its timer cannot fire mid-transfer; the copy re-arms the idle deadline per chunk, like the upload.
+            HttpResponseMessage response;
+            using (var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            {
+                timeoutSource.CancelAfter(_controlTimeout);
+                response = await _httpClient.GetAsync($"{baseUrl}{Constants.ComfyUi.ViewPath}?{query}", HttpCompletionOption.ResponseHeadersRead, timeoutSource.Token);
+            }
+
+            using (response)
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"The output request (GET /view) failed with status {(int)response.StatusCode} ({response.StatusCode}).");
+                }
+
+                var download = new ProgressFileDownload(localPath, _transferIdleTimeout, cancellationToken);
+                await download.Save(response);
+            }
+        }
+
         /// <summary>Submits the workflow to ComfyUI, tagged with the client id so a WebSocket can attach to its progress.</summary>
         public async Task<ComfyUiSubmitResult> SubmitPrompt(string baseUrl, SeedVrWorkflow workflow, string clientId, CancellationToken cancellationToken = default)
         {

@@ -117,6 +117,18 @@ namespace SeedVr.Logger
             logger.Warning(ex, message);
         }
 
+        public static void Warning(
+           Exception ex,
+           string message,
+           object[] values,
+           [CallerMemberName] string memberName = "",
+           [CallerFilePath] string sourceFilePath = "",
+           [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            var logger = GetLogger(sourceFilePath, memberName, sourceLineNumber);
+            logger.Warning(ex, message, values);
+        }
+
         public static void Error(
             Exception ex,
             string message,
@@ -126,6 +138,18 @@ namespace SeedVr.Logger
         {
             var logger = GetLogger(sourceFilePath, memberName, sourceLineNumber);
             logger.Error(ex, message);
+        }
+
+        public static void Error(
+            Exception ex,
+            string message,
+            object[] values,
+            [CallerMemberName] string memberName = "",
+            [CallerFilePath] string sourceFilePath = "",
+            [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            var logger = GetLogger(sourceFilePath, memberName, sourceLineNumber);
+            logger.Error(ex, message, values);
         }
 
         public static void Error(

@@ -29,17 +29,18 @@ namespace SeedVr.Remote.HttpClients
             _logPollInterval = TimeSpan.FromSeconds(Constants.ComfyUi.LogPollSeconds);
         }
 
-        /// <summary>Waits for the job to finish, reporting progress and running the ETA estimators along the way. True when it completed successfully.</summary>
-        public async Task<bool> TrackJobCompletion(string comfyUiAddress, string clientId, string promptId, JobProgressContext progressContext, CancellationToken cancellationToken)
+        /// <summary>Waits for the job to finish, reporting progress and running the ETA estimators along the way.
+        /// Returns the completed /history entry, carrying the outputs to download, or null when the job did not succeed.</summary>
+        public async Task<ComfyUiHistoryEntry> TrackRawJobCompletion(string comfyUiAddress, string clientId, string promptId, JobProgressContext progressContext, CancellationToken cancellationToken)
         {
             var tracker = ProgressTracker.CreateStandard(progressContext);
 
             await TrackLiveProgress(comfyUiAddress, clientId, promptId, tracker, cancellationToken);
 
-            var succeeded = await PollHistoryUntilComplete(comfyUiAddress, promptId, cancellationToken);
-            var trace = tracker.Complete(succeeded);
+            var completedEntry = await PollHistoryUntilComplete(comfyUiAddress, promptId, cancellationToken);
+            var trace = tracker.Complete(completedEntry != null);
             EstimatorTraceStore.SaveForPrompt(promptId, trace);
-            return succeeded;
+            return completedEntry;
         }
 
         /// <summary>Feeds the tracker from the progress socket and the phase-line poll at once, stopping the poll once the socket loop ends.</summary>
@@ -315,41 +316,42 @@ namespace SeedVr.Remote.HttpClients
             };
         }
 
-        /// <summary>Polls /history until the job is recorded as finished; true when it succeeded.</summary>
-        private async Task<bool> PollHistoryUntilComplete(string comfyUiAddress, string promptId, CancellationToken cancellationToken)
+        /// <summary>Polls /history until the job is recorded as finished; the completed entry when it succeeded, null otherwise.</summary>
+        private async Task<ComfyUiHistoryEntry> PollHistoryUntilComplete(string comfyUiAddress, string promptId, CancellationToken cancellationToken)
         {
             while (true)
             {
-                var status = await GetHistoryStatus(comfyUiAddress, promptId, cancellationToken);
+                var entry = await GetHistoryEntry(comfyUiAddress, promptId, cancellationToken);
+                var status = entry?.Status;
                 if (status != null && status.Completed)
                 {
-                    var succeeded = status.StatusStr == Constants.ComfyUi.SuccessStatus;
-                    if (!succeeded)
+                    if (status.StatusStr == Constants.ComfyUi.SuccessStatus)
                     {
-                        Log.Error("Job {PromptId} finished without success (status '{Status}').", [promptId, status.StatusStr]);
+                        return entry;
                     }
 
-                    return succeeded;
+                    Log.Error("Job {PromptId} finished without success (status '{Status}').", [promptId, status.StatusStr]);
+                    return null;
                 }
 
                 if (status != null && status.StatusStr == Constants.ComfyUi.ErrorStatus)
                 {
                     Log.Error("Job {PromptId} ended with an error.", [promptId]);
-                    return false;
+                    return null;
                 }
 
                 await Task.Delay(_historyPollInterval, cancellationToken);
             }
         }
 
-        /// <summary>Reads the job's /history status, treating a transient read failure as "not finished yet" so a network blip or a
+        /// <summary>Reads the job's /history entry, treating a transient read failure as "not finished yet" so a network blip or a
         /// proxy gateway error does not abort a job that is still running remotely. /history is polled again on the next interval.</summary>
-        private async Task<ComfyUiHistoryStatus> GetHistoryStatus(string comfyUiAddress, string promptId, CancellationToken cancellationToken)
+        private async Task<ComfyUiHistoryEntry> GetHistoryEntry(string comfyUiAddress, string promptId, CancellationToken cancellationToken)
         {
             try
             {
                 var entry = await _comfyUiClient.GetJobHistory(comfyUiAddress, promptId, cancellationToken);
-                return entry?.Status;
+                return entry;
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {

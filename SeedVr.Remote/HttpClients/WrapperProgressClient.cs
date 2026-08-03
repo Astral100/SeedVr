@@ -17,8 +17,9 @@ namespace SeedVr.Remote.HttpClients
             _resultPollInterval = TimeSpan.FromSeconds(Constants.Wrapper.ResultPollSeconds);
         }
 
-        /// <summary>Polls /result until the request finishes, reporting its progress along the way. True when it completed.</summary>
-        public async Task<bool> TrackJobCompletion(string wrapperAddress, string requestId, CancellationToken cancellationToken)
+        /// <summary>Polls /result until the request finishes, reporting its progress along the way.
+        /// Returns the completed result, carrying the output file references, or null when the request failed.</summary>
+        public async Task<WrapperResult> TrackWrapperJobCompletion(string wrapperAddress, string requestId, CancellationToken cancellationToken)
         {
             string lastReportedMessage = null;
             while (true)
@@ -30,13 +31,13 @@ namespace SeedVr.Remote.HttpClients
                 if (status == Constants.Wrapper.CompletedStatus)
                 {
                     Log.Information("Request {RequestId} completed. {Message}", [requestId, result.Message]);
-                    return true;
+                    return result;
                 }
 
                 if (status == Constants.Wrapper.FailedStatus)
                 {
                     Log.Error("Request {RequestId} failed. {Message}", [requestId, result.Message]);
-                    return false;
+                    return null;
                 }
 
                 // Each poll repeats the same message until progress advances, so report only when it changes.
