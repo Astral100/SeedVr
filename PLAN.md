@@ -23,7 +23,10 @@ return only once the job has finished. Both trackers run the same ETA estimators
 phase/batch lines to each, while percent comes from the socket on the raw path and from `/result`'s message on the wrapper path. `StartJob` calls the raw path; switch to the wrapper by toggling the commented line in `StartJob`. The two
 tracking methods return the completed `/history` entry / final `/result` (null on failure), and
 `JobRunner.DownloadJobOutputs` then streams each output over raw `/view` into `videos/output/`, mirroring the remote
-`jobs/<job-id>/` subfolder so runs never collide, via a `.part` file renamed only on success. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds the run. The
+`jobs/<job-id>/` subfolder so runs never collide, via a `.part` file renamed only on success. After a successful
+download `JobRunner.CleanupRemoteJobFolders` removes the instance's `jobs/<job-id>/` input and output folders over
+the instance's Jupyter contents API. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds
+the run; a cancellation during tracking first sends a best-effort raw `POST /interrupt` / wrapper `POST /cancel/{request_id}`. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
@@ -45,7 +48,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 3 | Patch workflow, upload, submit | Done, both raw and wrapper paths verified live 01/08/2026 |
 | 4 | Live progress | Done, both paths verified live 03/08/2026 |
 | 5 | Download the result | Done, both paths verified live 03/08/2026 |
-| 6 | Remote cleanup and cancellation | Not started |
+| 6 | Remote cleanup and cancellation | Done, both paths verified live 04/08/2026 |
 | 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
 
 ## Milestone 3 - patch, upload, submit
@@ -134,15 +137,20 @@ with the server-returned values verbatim.
 
 ## Milestone 6 - remote cleanup and cancellation
 
-- Remove `ComfyUI/input/jobs/<job-id>/` and `ComfyUI/output/jobs/<job-id>/` after a successful download.
-- Cancel: raw `POST /interrupt` or queue removal; wrapper `POST /cancel/{request_id}`.
+- Cleanup: after a successful download, `JobRunner.CleanupRemoteJobFolders` deletes `workspace/ComfyUI/input/jobs/<job-id>` and `workspace/ComfyUI/output/jobs/<job-id>` through the instance's Jupyter contents API (`DELETE /api/contents/<path>`, `JupyterClient`), which removes a non-empty folder in one call (204). Auth is `Authorization: token <jupyter_token>`, with the token and the `8080/tcp` port mapping read from the same Vast.ai account API call that resolves the other addresses; Jupyter is served over HTTPS with a self-signed certificate, so its client alone skips certificate validation. A 404 counts as already clean; any cleanup failure warns and never fails a job whose download succeeded.
+- Cancellation: Ctrl+C during tracking sends a best-effort remote cancel on `CancellationToken.None` under the control timeout - raw `POST /interrupt`, wrapper `POST /cancel/{request_id}` - then rethrows so the run unwinds as cancelled.
+- Post-cancellation recovery (`JobRunner.RecoverLatchedGpuMemory`, both paths, bounded by an overall deadline): wait for the queue to drain (the interrupt lands at a phase boundary), read the GPU's free-VRAM fraction from `/system_stats` with settle retries, and when it stays under `MinimumFreeVramFraction` restart the ComfyUI process via `JupyterClient.RestartComfyUi` (`supervisorctl restart comfyui` through Jupyter's terminal API: `POST /api/terminals`, the command over its WebSocket, then delete the terminal), then poll until VRAM reports healthy. Dry run verified live 04/08/2026: ComfyUI back with full VRAM in 18s.
+- Readiness gate: `InstanceSelector` refuses an instance (Busy) whose free-VRAM fraction is under `MinimumFreeVramFraction`, so a latched instance can never receive a job.
+- Raw cancellation verified live 04/08/2026 (prompt `c5b8288c-6090-4428-a89e-4b62ba135edd`): Ctrl+C at ~20% sent `/interrupt`, the instance logged "Processing interrupted", and `/history` recorded `status_str "error"`, `completed false`, with an `execution_interrupted` message naming the node it stopped on. The cancelled run's leftover input folder was removed via Jupyter afterwards.
+- In-app cleanup verified live 04/08/2026 on both paths (raw job `e106e92cb5fc4b9daff072db9ca92cdb`, wrapper job `9fe400fcf4fa4c9eba5b4078ca0559fe`): after the download both job folders were removed through `JobRunner`, confirmed empty by follow-up listings.
+- Wrapper cancellation verified live 04/08/2026 (requests `644cfafa` at ~20% and `8235a35a` at ~45%): `/cancel` marks the request cancelled, aborts the worker's WebSocket and interrupts the underlying ComfyUI prompt itself, so no raw `/interrupt` chaining is needed. The interrupt takes effect at a phase boundary, so a cancelled job can keep the instance busy for a short wind-down; the queue-length readiness gate covers that window (observed refusing a run).
 
 ## Milestone 7 - timeouts and progress
 
 The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload and download stream in chunks, re-arm a configurable idle deadline after each successful write and report progress on that same tick; the download requests with `HttpCompletionOption.ResponseHeadersRead` and takes its total from `Content-Length`.
 
 - Processing: re-arm on each WebSocket `progress` message, which carries `value` and `max`.
-- Bound the wrapper `/result` retry: a permanently unparseable response (e.g. future s3-mode output) currently retries forever.
+- Bound the wrapper `/result` retry: the failed-500 case now terminates (04/08/2026), but a permanently unparseable 200 response (e.g. future s3-mode output) still retries forever.
 
 ## Open decisions
 
@@ -150,8 +158,9 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 
 ## Unverified paths
 
+- The post-cancellation recovery has not caught a real latch in the wild (7 cancels since produced none; the one observed latch predates the recovery). Both branches are verified live 04/08/2026: the no-latch path on four cancelled runs, and the restart branch via a forced test (latch check temporarily forced true, since reverted) - ComfyUI restarted through `JupyterClient.RestartComfyUi` and reported the memory released 18s later.
 - The 404 branch in `InstanceSelector.ValidateModelsDownloaded`, for a missing `seedvr2` models folder.
-- The failure branches: only success has been seen live, so the wrapper's `failed` status and the raw path's `status_str == "error"` are guesses. A deliberate-failure run is needed to confirm both strings.
+- Both failure strings are confirmed live 04/08/2026: the raw path's interrupted run recorded `status_str "error"` with `completed false`, and the wrapper's OOM run reported `status "failed"`.
 
 ## Decisions taken
 
@@ -164,10 +173,14 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 - The API wrapper runs on container port `8288/tcp` (baked into the SeedVR2 Vast template, alongside ComfyUI's `8188/tcp`) and its proxy accepts `Bearer AuthToken`; its address resolves live from the instance's port mapping via `GetWrapperAddress`, so no wrapper URL is configured.
 - Every progress loop (raw socket, `/internal/logs/raw` poll, `/history` poll, wrapper `/result` poll) self-heals: a transient read failure or per-request timeout is logged and retried, and an unparseable socket frame is skipped. Only run cancellation stops a loop, so a mid-run proxy blip does not abandon a job still running remotely.
 - Wrapper tracking stays on `/result` polling. A one-off stream probe (run 03/08/2026, removed since; capture kept in `logs/wrapper-stream-74af0990b28347208b3447221cfe35a8.log`) pinned `/generate/stream` as SSE (`text/event-stream`, `data: {json}` events with `request_id`/`status`/`message`/`timestamp` plus queue info) that emits lifecycle transitions only: after "queued" and "processing" it stayed silent through 30s of generation while `/result` already reported 20%, so it adds nothing for progress cadence.
+- Remote cleanup goes through the instance's Jupyter server, the one instance service that can delete files over HTTP: ComfyUI and the wrapper expose no deletion, and Vast.ai's remote-execute API (`PUT api/v0/instances/command/{id}/`) refuses running instances ("Execute command only avail on stopped instances", confirmed live 04/08/2026), pointing at SSH instead. Jupyter's `DELETE /api/contents/<path>` deletes a non-empty folder in one call (confirmed live 04/08/2026, removing the run's leftover folders).
+- The wrapper reports a failed generation as HTTP 500 on `/result`, with the JSON body still carrying the full result (`status "failed"`, the error inside `message`; confirmed live 04/08/2026 via an OOM run). `GetResult` reads that body instead of throwing, mirroring `SubmitPrompt`'s 400 `node_errors` handling, so the poll ends on the failed status instead of retrying forever.
+- A raw `/interrupt` mid-run leaves the SeedVR2 runner's VRAM allocated (~11 GiB observed 04/08/2026); `/free` does not reclaim it immediately, and the next job can fail with `torch.OutOfMemoryError`. The latch is occasional, not systematic: both wrapper-path cancels released their VRAM immediately. Failed jobs are prevented by the post-cancellation recovery (detect the latch, restart the ComfyUI process via Jupyter) and the free-VRAM readiness gate; a possible refinement is skipping the interrupt when the remaining ETA is short.
 - The wrapper honors a self-assigned `input.request_id` (confirmed live: events echo it and `/result/<our-id>` answered mid-run), and its "Generation started" message exposes the underlying ComfyUI prompt id - both useful for serverless correlation later; the model property was removed with the probe and can be re-added when needed.
 
 ## Deferred
 
+- Housekeeping pass at the end, after the raw-vs-wrapper decision lands: split `HttpClients/` into `HttpClients` (protocol clients), `Progress` (trackers, `PhaseLinePoller`, parsers) and `Transfer` (`ProgressStreamContent`, `ProgressFileDownload`); extract `JobRunner`'s pipeline stages (download + local-path logic, cleanup/cancel pair) into their own classes.
 - Silence the `IHttpClientFactory` info logs: `"System.Net.Http.HttpClient": "Warning"` under `Logging:LogLevel`.
 - The first port binding wins when an instance returns several.
 - `SeedVr.Remote.Tests` is inert: it has no reference to `SeedVr.Remote`, only an empty `Test1`.

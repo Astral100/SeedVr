@@ -20,7 +20,10 @@ namespace SeedVr.Estimators.Signals
             }
 
             var match = VideoMetadataPattern.Match(logLine);
-            if (!match.Success || !int.TryParse(match.Groups[1].Value, out var frameCount) || !int.TryParse(match.Groups[2].Value, out var width) || !int.TryParse(match.Groups[3].Value, out var height))
+            if (!match.Success ||
+                !int.TryParse(match.Groups[1].Value, out var frameCount) ||
+                !int.TryParse(match.Groups[2].Value, out var width) ||
+                !int.TryParse(match.Groups[3].Value, out var height))
             {
                 return null;
             }

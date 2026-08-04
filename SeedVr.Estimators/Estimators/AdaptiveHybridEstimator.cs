@@ -55,7 +55,9 @@ namespace SeedVr.Estimators.Estimators
             }
 
             var phaseTotalSeconds = phaseEstimate.EstimatedTotal.TotalSeconds;
-            liveTotalSeconds = Math.Clamp(liveTotalSeconds, phaseTotalSeconds - Constants.HybridMaximumDeviationSeconds, phaseTotalSeconds + Constants.HybridMaximumDeviationSeconds);
+            var minimumSeconds = phaseTotalSeconds - Constants.HybridMaximumDeviationSeconds;
+            var maximumSeconds = phaseTotalSeconds + Constants.HybridMaximumDeviationSeconds;
+            liveTotalSeconds = Math.Clamp(liveTotalSeconds, minimumSeconds, maximumSeconds);
             var progress = _latestPercent.Value / 100.0;
             var liveWeight = Constants.HybridMinimumLiveWeight + progress * (Constants.HybridMaximumLiveWeight - Constants.HybridMinimumLiveWeight);
             var totalSeconds = (1 - liveWeight) * phaseTotalSeconds + liveWeight * liveTotalSeconds;

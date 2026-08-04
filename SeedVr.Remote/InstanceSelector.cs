@@ -185,6 +185,13 @@ namespace SeedVr.Remote
                 if (device != null)
                 {
                     Log.Information("ComfyUI device: {Name} ({Type}), VRAM {FreeVram:F1}/{TotalVram:F1} GiB free.", [device.Name, device.Type, ToGigabytes(device.VramFree), ToGigabytes(device.VramTotal)]);
+
+                    // A cancelled job can leave GPU memory latched; submitting onto it would fail with an OOM, so the instance only needs time (or its recovery) rather than attention.
+                    if (device.VramTotal > 0 && (double)device.VramFree / device.VramTotal < _appSettings.MinimumFreeVramFraction)
+                    {
+                        Log.Warning("Only {FreeVram:F1}/{TotalVram:F1} GiB of VRAM is free, under the {Threshold:P0} readiness threshold: an earlier job's memory has not been released yet.", [ToGigabytes(device.VramFree), ToGigabytes(device.VramTotal), _appSettings.MinimumFreeVramFraction]);
+                        return InstanceState.Busy;
+                    }
                 }
 
                 return InstanceState.Available;

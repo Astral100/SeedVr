@@ -69,7 +69,8 @@ namespace SeedVr.Remote.HttpClients
             timeoutSource.CancelAfter(_controlTimeout);
 
             // /history/<id> returns an object keyed by the prompt id, empty until the job is recorded.
-            var history = await _httpClient.GetFromJsonAsync<Dictionary<string, ComfyUiHistoryEntry>>($"{baseUrl}{Constants.ComfyUi.HistoryPath}/{promptId}", timeoutSource.Token);
+            var historyUrl = $"{baseUrl}{Constants.ComfyUi.HistoryPath}/{promptId}";
+            var history = await _httpClient.GetFromJsonAsync<Dictionary<string, ComfyUiHistoryEntry>>(historyUrl, timeoutSource.Token);
             if (history != null && history.TryGetValue(promptId, out var entry))
             {
                 return entry;
@@ -117,7 +118,10 @@ namespace SeedVr.Remote.HttpClients
         public async Task DownloadOutput(string baseUrl, ComfyUiOutputFile outputFile, string localPath, CancellationToken cancellationToken = default)
         {
             // The filename and subfolder come back from the server verbatim; the filename can carry spaces and brackets, so escape each value.
-            var query = $"filename={Uri.EscapeDataString(outputFile.Filename)}&subfolder={Uri.EscapeDataString(outputFile.Subfolder ?? string.Empty)}&type={Uri.EscapeDataString(outputFile.Type ?? string.Empty)}";
+            var filename = Uri.EscapeDataString(outputFile.Filename);
+            var subfolder = Uri.EscapeDataString(outputFile.Subfolder ?? string.Empty);
+            var type = Uri.EscapeDataString(outputFile.Type ?? string.Empty);
+            var query = $"filename={filename}&subfolder={subfolder}&type={type}";
 
             // Headers first, so the body streams instead of buffering. Only this phase runs under the control timeout: the source is
             // disposed before the copy, so its timer cannot fire mid-transfer; the copy re-arms the idle deadline per chunk, like the upload.
@@ -138,6 +142,16 @@ namespace SeedVr.Remote.HttpClients
                 var download = new ProgressFileDownload(localPath, _transferIdleTimeout, cancellationToken);
                 await download.Save(response);
             }
+        }
+
+        /// <summary>Interrupts the execution ComfyUI is currently running (POST /interrupt), which ends the job as an error.</summary>
+        public async Task InterruptExecution(string baseUrl, CancellationToken cancellationToken = default)
+        {
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(_controlTimeout);
+
+            using var response = await _httpClient.PostAsync($"{baseUrl}{Constants.ComfyUi.InterruptPath}", null, timeoutSource.Token);
+            response.EnsureSuccessStatusCode();
         }
 
         /// <summary>Submits the workflow to ComfyUI, tagged with the client id so a WebSocket can attach to its progress.</summary>

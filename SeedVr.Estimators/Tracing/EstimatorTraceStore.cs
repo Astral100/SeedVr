@@ -13,7 +13,8 @@ namespace SeedVr.Estimators.Tracing
             Converters = { new JsonStringEnumConverter() }
         };
 
-        /// <summary>Saves a completed run under the conventional logs/estimator-{promptId}.json path, warning rather than throwing so a diagnostics write cannot fail an otherwise finished job.</summary>
+        /// <summary>Saves a completed run under the conventional logs/estimator-{promptId}.json path,
+        /// warning rather than throwing so a diagnostics write cannot fail an otherwise finished job.</summary>
         public static void SaveForPrompt(string promptId, EstimatorRunTrace trace)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), Constants.TraceDirectory, $"estimator-{promptId}.json");

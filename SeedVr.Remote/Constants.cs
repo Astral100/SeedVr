@@ -7,6 +7,7 @@ namespace SeedVr.Remote
             public const string SystemStatsPath = "system_stats";
             public const string ModelsPath = "models";
             public const string PromptPath = "prompt";
+            public const string InterruptPath = "interrupt";
             public const string UploadImagePath = "upload/image";
             public const string HistoryPath = "history";
             public const string ViewPath = "view";
@@ -31,6 +32,7 @@ namespace SeedVr.Remote
         {
             public const string GeneratePath = "generate";
             public const string ResultPath = "result";
+            public const string CancelPath = "cancel";
             public const string CompletedStatus = "completed";
             public const string FailedStatus = "failed";
             public const int ResultPollSeconds = 3;
@@ -48,7 +50,32 @@ namespace SeedVr.Remote
             public const string InstancesPath = "api/v1/instances/";
             public const string ComfyUiContainerPort = "8188/tcp";
             public const string WrapperContainerPort = "8288/tcp";
+            public const string JupyterContainerPort = "8080/tcp";
             public const string RunningStatus = "running";
+        }
+
+        public static class Jupyter
+        {
+            public const string ContentsPath = "api/contents";
+            public const string TerminalsPath = "api/terminals";
+            public const string TerminalWebSocketPath = "terminals/websocket";
+            public const string TokenScheme = "token";
+            public const string StdinMessageType = "stdin";
+            public const string RestartComfyUiCommand = "supervisorctl restart comfyui";
+            public const string InputJobsRoot = "workspace/ComfyUI/input/jobs";
+            public const string OutputJobsRoot = "workspace/ComfyUI/output/jobs";
+
+            public const int TerminalCommandGraceSeconds = 5;
+        }
+
+        public static class Recovery
+        {
+            public const int TimeoutSeconds = 120;
+            public const int QueueDrainPollSeconds = 3;
+            public const int VramSettleAttempts = 3;
+            public const int VramPollSeconds = 5;
+            public const int MaxConsecutiveReadFailures = 5;
+            public const int ProgressPingSeconds = 15;
         }
 
         public static class Video

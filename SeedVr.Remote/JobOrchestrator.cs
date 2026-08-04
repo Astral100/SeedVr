@@ -21,10 +21,11 @@ namespace SeedVr.Remote
             }
 
             var comfyUiAddress = instance.GetComfyUiAddress();
+            var jupyterAddress = instance.GetJupyterAddress();
 
             // Raw and wrapper submit paths are both available; comment one and uncomment the other to switch.
-            var success = await _jobRunner.StartRawJob(comfyUiAddress, cancellationToken);
-            // var success = await _jobRunner.StartWrapperJob(comfyUiAddress, instance.GetWrapperAddress(), cancellationToken);
+            var success = await _jobRunner.StartRawJob(comfyUiAddress, jupyterAddress, instance.JupyterToken, cancellationToken);
+            // var success = await _jobRunner.StartWrapperJob(comfyUiAddress, instance.GetWrapperAddress(), jupyterAddress, instance.JupyterToken, cancellationToken);
 
             return success;
         }

@@ -36,5 +36,11 @@ namespace SeedVr.Core
 
         [Range(1, 3600)]
         public int TransferIdleTimeoutSeconds { get; set; }
+
+        // A cancelled job can leave GPU memory latched. Below this free fraction the instance is refused as
+        // not ready, and the post-cancellation recovery restarts the ComfyUI process to release the memory.
+        // The minimum excludes the unset default of 0, which would silently disable both protections.
+        [Range(0.05, 1.0)]
+        public double MinimumFreeVramFraction { get; set; }
     }
 }

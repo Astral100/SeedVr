@@ -21,6 +21,10 @@ namespace SeedVr.Remote.Models.VastAi
         [JsonPropertyName("actual_status")]
         public string ActualStatus { get; set; }
 
+        /// <summary>The token the instance's Jupyter server authenticates with, reported by the account API.</summary>
+        [JsonPropertyName("jupyter_token")]
+        public string JupyterToken { get; set; }
+
         /// <summary>Null unless the instance is running.</summary>
         [JsonPropertyName("ports")]
         public VastAiPorts Ports { get; set; }
@@ -50,6 +54,19 @@ namespace SeedVr.Remote.Models.VastAi
             var hostPort = GetWrapperHostPort();
             return $"http://{PublicIpAddress}:{hostPort}/";
         }
+
+        /// <summary>The host port Jupyter is published on, or null when the instance does not publish it.</summary>
+        public string GetJupyterHostPort()
+        {
+            return Ports?.Jupyter?.FirstOrDefault()?.HostPort;
+        }
+
+        /// <summary>The instance's Jupyter base address; Vast.ai serves Jupyter over HTTPS with a self-signed certificate.</summary>
+        public string GetJupyterAddress()
+        {
+            var hostPort = GetJupyterHostPort();
+            return $"https://{PublicIpAddress}:{hostPort}/";
+        }
     }
 
     public class VastAiPorts
@@ -59,6 +76,9 @@ namespace SeedVr.Remote.Models.VastAi
 
         [JsonPropertyName(Constants.VastAi.WrapperContainerPort)]
         public List<VastAiPortBinding> Wrapper { get; set; }
+
+        [JsonPropertyName(Constants.VastAi.JupyterContainerPort)]
+        public List<VastAiPortBinding> Jupyter { get; set; }
 
         /// <summary>Everything else the instance publishes, which tells an empty mapping apart from one without ComfyUI.</summary>
         [JsonExtensionData]

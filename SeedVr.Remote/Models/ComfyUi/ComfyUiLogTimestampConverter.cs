@@ -4,7 +4,8 @@ using System.Text.Json.Serialization;
 
 namespace SeedVr.Remote.Models.ComfyUi
 {
-    /// <summary>Reads ComfyUI's zone-less log timestamp as UTC, since the server stamps entries in UTC. A value that is not a valid timestamp is an error, not a line to quietly skip.</summary>
+    /// <summary>Reads ComfyUI's zone-less log timestamp as UTC, since the server stamps entries in UTC.
+    /// A value that is not a valid timestamp is an error, not a line to quietly skip.</summary>
     public class ComfyUiLogTimestampConverter : JsonConverter<DateTimeOffset>
     {
         public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

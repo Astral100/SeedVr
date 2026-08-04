@@ -10,6 +10,15 @@ namespace SeedVr.Remote
             services.AddHttpClient<ComfyUiClient>();
             services.AddHttpClient<ComfyWrapperClient>();
             services.AddHttpClient<VastAiClient>();
+
+            // Vast.ai serves the instance's Jupyter over HTTPS with a self-signed certificate, so this one client skips validation.
+            services.AddHttpClient<JupyterClient>()
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    });
+
             services.AddTransient<PhaseLinePoller>();
             services.AddTransient<ComfyProgressClient>();
             services.AddTransient<WrapperProgressClient>();

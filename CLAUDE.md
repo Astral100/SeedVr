@@ -2,7 +2,7 @@
 
 - No `Async` suffix on async method names. `GetInstalledModels`, not `GetInstalledModelsAsync`.
 - Every method has a braced body. Never use expression-bodied methods (`=>`).
-- Keep statements and signatures on one line, unless the line is genuinely long or the signature has many parameters.
+- Keep statements on one line, unless the line is genuinely long (roughly over 150-170 characters); past that point, split it structurally. Log calls and method signatures stay on one line no matter the length.
 - Compare strings with `==` and `!=`. Never `string.Equals`, and no `ToLower`/`ToUpper` unless genuinely necessary.
 - Don't use `string.Compare`/`string.CompareOrdinal` unless a case genuinely requires it.
 - Every enum declares `Unknown` first, so the default value is never a real state.
