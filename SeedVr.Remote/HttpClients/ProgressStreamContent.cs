@@ -64,6 +64,13 @@ namespace SeedVr.Remote.HttpClients
             {
                 throw new IOException($"The transfer made no progress for {_idleTimeout.TotalSeconds:F0} seconds.", ex);
             }
+            catch (Exception ex) when (ex is OperationCanceledException or IOException && (_callerToken.IsCancellationRequested || serializationToken.IsCancellationRequested))
+            {
+                // Cancellation lands here either as the linked token's cancellation or as the abort of the already-
+                // cancelled connection. Nothing observes an exception thrown from this frame - the HttpClient
+                // machinery swallows it and PostAsync surfaces the cancellation itself either way - so end the
+                // serialization quietly instead of throwing into a void.
+            }
         }
 
         /// <summary>Logs the transfer's byte progress only when it crosses the next percent milestone or completes.</summary>

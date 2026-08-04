@@ -69,6 +69,12 @@ namespace SeedVr.Remote.HttpClients
             {
                 throw new IOException($"The transfer made no progress for {_idleTimeout.TotalSeconds:F0} seconds.", ex);
             }
+            catch (IOException ex) when (_callerToken.IsCancellationRequested)
+            {
+                // Cancelling the request aborts the connection mid-read, which surfaces as a socket abort
+                // rather than a cancellation; rethrow it as the cancellation it is.
+                throw new OperationCanceledException("The download was cancelled.", ex, _callerToken);
+            }
 
             // Belt and braces: a truncated body normally surfaces as a read exception, but never rename a short file into place.
             if (totalLength > 0 && transferred != totalLength)
