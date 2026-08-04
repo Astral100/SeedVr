@@ -26,7 +26,8 @@ tracking methods return the completed `/history` entry / final `/result` (null o
 `jobs/<job-id>/` subfolder so runs never collide, via a `.part` file renamed only on success. After a successful
 download `JobRunner.CleanupRemoteJobFolders` removes the instance's `jobs/<job-id>/` input and output folders over
 the instance's Jupyter contents API. `Main` wires `Console.CancelKeyPress` to a `CancellationTokenSource`, so Ctrl+C unwinds
-the run; a cancellation during tracking first sends a best-effort raw `POST /interrupt` / wrapper `POST /cancel/{request_id}`. The
+the run; a cancellation during tracking first sends a best-effort raw `POST /interrupt` / wrapper `POST /cancel/{request_id}`.
+Both trackers run under a progress-re-armed stall deadline (`ProcessingStallTimeoutSeconds`); a stalled job is stopped and recovered like a cancelled one, then the run fails. The
 workflow is a typed `SeedVrWorkflow`, not raw JSON, namespaced under `jobs/<job-id>/`. Node IDs and the wrapper
 contract are confirmed in `docs/comfyui-wrapper-openapi.json`.
 
@@ -49,7 +50,7 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 4 | Live progress | Done, both paths verified live 03/08/2026 |
 | 5 | Download the result | Done, both paths verified live 03/08/2026 |
 | 6 | Remote cleanup and cancellation | Done, both paths verified live 04/08/2026 |
-| 7 | Timeouts and progress reporting | Deferred until the phase boundaries settle |
+| 7 | Timeouts and progress reporting | Done, stall paths verified live 04/08/2026 |
 
 ## Milestone 3 - patch, upload, submit
 
@@ -121,9 +122,10 @@ One-batch validation 03/08/2026: `[01s] cat finger shooting.mp4` produced 32 fra
 
 Many-batch validation 03/08/2026: `[10s] cat finger shooting.mp4` produced 300 frames / 10 padded batches and prompt `d4cd2660-4682-48c6-b480-fc7a0c1d8a3d` completed successfully in ~1005.6s (15:45.8 processing + 59.9s remote finalization). With the live run's original zero-intercept finalization model, adaptive-hybrid and phase-batch ranked first at 22.0s/22.2s common-checkpoint MAE over 33 checkpoints; naive-linear scored 30.9s, frame-linear 33.9s and percent-DEMA 48.4s. Encoding measured 3.8s + 19.6s/batch, DiT 0.1s + 22.6s/batch, VAE ~47.0s/batch and post-processing ~5.0s/batch, validating the setup/per-batch decomposition and batch 3+ refinement. The prior finalization model predicted 75.1s; fitting a fixed overhead plus per-frame cost across all five traces predicts 60.1s for this run while retaining ~9.5s/15.2s for 32/62 frames. Offline replay with that fit reduces phase-batch/hybrid MAE to 10.0s/10.4s; hybrid remains the aggregate winner across all 53 common checkpoints, while phase-batch narrowly wins this long trace.
 
+Ten-second validation 04/08/2026: `[10s] cat finger shooting.mp4` (300 frames, batch 33, 704x1280 -> 1080) completed in 12:20, prompt `0af7f009`. The estimate opened at 1036s vs 726s actual to SeedVR2 100% (+43%), still read 853s at 50% and 799s at completion; average ETA error 172.3s, worst 294.7s over 34 checkpoints. The priors overestimate on this faster host and the blend leans on them too long - the strongest data point yet for the lengths/hosts validation.
+
 To do:
 - Validate adaptive-hybrid across a range of lengths, aspect ratios and hosts.
-- Record the wrapper's `/result` percent only when it changes: the 3s poll currently repeats identical percents, which the rate-based estimators read as slowdowns.
 
 ## Milestone 5 - download the result
 
@@ -150,8 +152,12 @@ with the server-returned values verbatim.
 
 The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModels`) carry a linked-`CancellationTokenSource` deadline; `ComfyUiClient` sets `Timeout.InfiniteTimeSpan`. Upload and download stream in chunks, re-arm a configurable idle deadline after each successful write and report progress on that same tick; the download requests with `HttpCompletionOption.ResponseHeadersRead` and takes its total from `Content-Length`.
 
-- Processing: re-arm on each WebSocket `progress` message, which carries `value` and `max`.
-- Bound the wrapper `/result` retry: the failed-500 case now terminates (04/08/2026), but a permanently unparseable 200 response (e.g. future s3-mode output) still retries forever.
+- Processing stall deadline: `ProcessingStallTimeoutSeconds` (default 600) bounds every tracking wait, linked to the run token; firing throws a `TimeoutException` (thrown nowhere else, so it is accurately catchable). Raw: armed across the socket connect and every receive, re-armed only by a progress frame that records a percent. Wrapper: armed across the `/result` polls, re-armed by a status transition or a changed parsed percent - which also bounds a permanently failing or unparseable `/result` (the former unbounded-retry case), since those polls never re-arm. The value must outlast the longest legitimately quiet stretch, chiefly remote finalization (~0.2s per frame of silence).
+- `JobRunner` treats a stall like a cancellation: best-effort raw `/interrupt` / wrapper `/cancel`, then `GpuRecovery`, then the run fails - otherwise a hung job would hold the instance and the readiness gate would refuse every later run.
+- `/history` completion poll: bounded by the stall deadline when the socket saw the run end (the entry lands within seconds); left unbounded when the socket dropped mid-run, because the poll is then the only tracker for a possibly healthy long job with no percent signal left to re-arm on.
+- The courtesy socket close runs on its own 5s deadline (`SocketCloseTimeoutSeconds`), so a hung or already-cancelled connection cannot stall the unwind.
+- The wrapper `/result` percent is recorded only when it changes (closes the 4b to-do): the 3s poll no longer replays identical percents into the rate-based estimators as slowdowns.
+- Both stall paths verified live 04/08/2026 by freezing the instance's ComfyUI python process (`pkill -STOP`) mid-generation at a 60s test timeout. Raw (prompt `f1bb3893`): the deadline fired exactly 60s after the last progress frame, the `/interrupt` timed out with a warning against the frozen server, recovery gave up at its 120s deadline and the run failed cleanly. Wrapper (request `0e1a3e10`): `/result` kept answering with an unmoving percent, the deadline fired at 60s, `/cancel` succeeded (the wrapper stayed alive) and the run failed cleanly. A frozen server makes each failed queue ping cost the full 30s control timeout, so the recovery's 120s deadline bails before the 5-failed-pings streak - same outcome, expected. A healthy 60s-armed run also completed with no false fire.
 
 ## Open decisions
 
@@ -161,6 +167,7 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 
 - The post-cancellation recovery has not caught a real latch in the wild (7 cancels since produced none; the one observed latch predates the recovery). Both branches are verified live 04/08/2026: the no-latch path on four cancelled runs, and the restart branch via a forced test (latch check temporarily forced true, since reverted) - ComfyUI restarted through `JupyterClient.RestartComfyUi` and reported the memory released 18s later.
 - The 404 branch in `InstanceSelector.ValidateModelsDownloaded`, for a missing `seedvr2` models folder.
+- Healthy runs on both paths completed at the production 600s stall value with no false fire (04/08/2026, raw `e32cb5da`, wrapper `d4eb9b81`, with the percent dedup active). A 10s/300-frame clip (raw `0af7f009`, 12:20 total) finalized in 14s - far lighter than the earlier ~0.2s/frame estimate - so 600s covers finalization for clips well beyond 10 minutes of footage; only multi-minute clips remain unexercised.
 - Both failure strings are confirmed live 04/08/2026: the raw path's interrupted run recorded `status_str "error"` with `completed false`, and the wrapper's OOM run reported `status "failed"`.
 
 ## Decisions taken
@@ -182,6 +189,4 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 ## Deferred
 
 - Housekeeping pass at the end, after the raw-vs-wrapper decision lands: split `HttpClients/` into `HttpClients` (protocol clients), `Progress` (trackers, `PhaseLinePoller`, parsers) and `Transfer` (`ProgressStreamContent`, `ProgressFileDownload`); extract `JobRunner`'s remaining pipeline stages (download + local-path logic, cleanup/cancel pair) into their own classes. The GPU recovery subsystem is already extracted into `GpuRecovery`.
-- Silence the `IHttpClientFactory` info logs: `"System.Net.Http.HttpClient": "Warning"` under `Logging:LogLevel`.
 - The first port binding wins when an instance returns several.
-- `SeedVr.Remote.Tests` is inert: it has no reference to `SeedVr.Remote`, only an empty `Test1`.

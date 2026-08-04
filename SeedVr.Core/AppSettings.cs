@@ -37,6 +37,12 @@ namespace SeedVr.Core
         [Range(1, 3600)]
         public int TransferIdleTimeoutSeconds { get; set; }
 
+        // Fails the run when the job reports no progress for this long: no socket progress frame on the raw path,
+        // no status or percent advance on the wrapper path. Must outlast the longest legitimately quiet stretch,
+        // including remote finalization, which reports nothing while the output video is assembled (~0.2s per frame).
+        [Range(30, 86400)]
+        public int ProcessingStallTimeoutSeconds { get; set; }
+
         // A cancelled job can leave GPU memory latched. Below this free fraction the instance is refused as
         // not ready, and the post-cancellation recovery restarts the ComfyUI process to release the memory.
         // The minimum excludes the unset default of 0, which would silently disable both protections.

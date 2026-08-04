@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using SeedVr.Core;
 using SeedVr.Estimators.Jobs;
 using SeedVr.Estimators.Live;
 using SeedVr.Estimators.Tracing;
@@ -13,12 +15,14 @@ namespace SeedVr.Remote.HttpClients
     {
         private readonly ComfyWrapperClient _comfyWrapperClient;
         private readonly PhaseLinePoller _phaseLinePoller;
+        private readonly AppSettings _appSettings;
         private readonly TimeSpan _resultPollInterval;
 
-        public WrapperProgressClient(ComfyWrapperClient comfyWrapperClient, PhaseLinePoller phaseLinePoller)
+        public WrapperProgressClient(ComfyWrapperClient comfyWrapperClient, PhaseLinePoller phaseLinePoller, IOptions<AppSettings> appSettingsOptions)
         {
             _comfyWrapperClient = comfyWrapperClient;
             _phaseLinePoller = phaseLinePoller;
+            _appSettings = appSettingsOptions.Value;
             _resultPollInterval = TimeSpan.FromSeconds(Constants.Wrapper.ResultPollSeconds);
         }
 
@@ -52,41 +56,76 @@ namespace SeedVr.Remote.HttpClients
             }
         }
 
-        /// <summary>Polls /result until the request finishes, feeding each reported percent to the tracker.
+        /// <summary>Polls /result until the request finishes, feeding each newly advanced percent to the tracker.
+        /// Only a status transition or a changed percent re-arms the stall deadline, so a hung request - or one whose
+        /// /result stays permanently failing or unparseable - ends in a stall instead of polling forever.
         /// The completed result when the request succeeded, null when it failed.</summary>
         private async Task<WrapperResult> PollResultUntilComplete(string wrapperAddress, string requestId, ProgressTracker tracker, CancellationToken cancellationToken)
         {
-            while (true)
+            using var stallDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            stallDeadline.CancelAfter(TimeSpan.FromSeconds(_appSettings.ProcessingStallTimeoutSeconds));
+            string lastStatus = null;
+            double? lastPercent = null;
+            try
             {
-                var result = await PollResult(wrapperAddress, requestId, cancellationToken);
-
-                var status = result?.Status;
-
-                if (status == Constants.Wrapper.CompletedStatus)
+                while (true)
                 {
-                    Log.Information("Request {RequestId} completed. {Message}", [requestId, result.Message]);
-                    return result;
-                }
+                    var result = await PollResult(wrapperAddress, requestId, stallDeadline.Token);
 
-                if (status == Constants.Wrapper.FailedStatus)
-                {
-                    Log.Error("Request {RequestId} failed. {Message}", [requestId, result.Message]);
-                    return null;
-                }
+                    var status = result?.Status;
 
-                RecordPercent(result, tracker);
-                await Task.Delay(_resultPollInterval, cancellationToken);
+                    if (status == Constants.Wrapper.CompletedStatus)
+                    {
+                        Log.Information("Request {RequestId} completed. {Message}", [requestId, result.Message]);
+                        return result;
+                    }
+
+                    if (status == Constants.Wrapper.FailedStatus)
+                    {
+                        Log.Error("Request {RequestId} failed. {Message}", [requestId, result.Message]);
+                        return null;
+                    }
+
+                    var statusAdvanced = status != null && status != lastStatus;
+                    if (statusAdvanced)
+                    {
+                        lastStatus = status;
+                    }
+
+                    var recordedPercent = RecordChangedPercent(result, lastPercent, tracker);
+                    var percentAdvanced = recordedPercent != lastPercent;
+                    if (percentAdvanced)
+                    {
+                        lastPercent = recordedPercent;
+                    }
+
+                    if (statusAdvanced || percentAdvanced)
+                    {
+                        stallDeadline.CancelAfter(TimeSpan.FromSeconds(_appSettings.ProcessingStallTimeoutSeconds));
+                    }
+
+                    await Task.Delay(_resultPollInterval, stallDeadline.Token);
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException($"The wrapper request reported no progress for {_appSettings.ProcessingStallTimeoutSeconds} seconds.");
             }
         }
 
-        /// <summary>Feeds the percent inside the /result message to the tracker, which reports progress compactly, so the raw message stays silent.</summary>
-        private void RecordPercent(WrapperResult result, ProgressTracker tracker)
+        /// <summary>Feeds the percent inside the /result message to the tracker only when it moved on from the last
+        /// recorded value, so the poll cadence cannot replay an unchanged percent into the rate-based estimators as a
+        /// slowdown. Returns the latest recorded percent.</summary>
+        private double? RecordChangedPercent(WrapperResult result, double? lastPercent, ProgressTracker tracker)
         {
             var percent = WrapperMessageParser.ParsePercent(result?.Message);
-            if (percent != null)
+            if (percent == null || percent == lastPercent)
             {
-                tracker.RecordPercent(percent.Value);
+                return lastPercent;
             }
+
+            tracker.RecordPercent(percent.Value);
+            return percent;
         }
 
         /// <summary>Reads the request's /result, treating a transient read failure as "no update this tick" so a network blip or a

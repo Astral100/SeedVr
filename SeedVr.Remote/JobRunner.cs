@@ -72,9 +72,17 @@ namespace SeedVr.Remote
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                Log.Warning("Cancellation requested; stopping the job on the instance...");
                 await InterruptRawJob(comfyUiAddress);
                 await _gpuRecovery.RecoverLatchedGpuMemory(comfyUiAddress, jupyterAddress, jupyterToken);
                 throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "The job stalled; stopping it on the instance so it cannot hold the GPU, then recovering.");
+                await InterruptRawJob(comfyUiAddress);
+                await _gpuRecovery.RecoverLatchedGpuMemory(comfyUiAddress, jupyterAddress, jupyterToken);
+                return false;
             }
 
             if (completedEntry == null)
@@ -140,9 +148,17 @@ namespace SeedVr.Remote
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                Log.Warning("Cancellation requested; stopping the request on the wrapper...");
                 await CancelWrapperJob(wrapperAddress, requestId);
                 await _gpuRecovery.RecoverLatchedGpuMemory(comfyUiAddress, jupyterAddress, jupyterToken);
                 throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "The request stalled; stopping it on the wrapper so it cannot hold the GPU, then recovering.");
+                await CancelWrapperJob(wrapperAddress, requestId);
+                await _gpuRecovery.RecoverLatchedGpuMemory(comfyUiAddress, jupyterAddress, jupyterToken);
+                return false;
             }
 
             if (completedResult == null)
@@ -162,13 +178,13 @@ namespace SeedVr.Remote
             return true;
         }
 
-        /// <summary>Best-effort interrupt of the cancelled run's job on the instance, so it does not keep burning GPU time.</summary>
+        /// <summary>Best-effort interrupt of an abandoned (cancelled or stalled) run's job on the instance, so it does not keep burning GPU time.</summary>
         private async Task InterruptRawJob(string comfyUiAddress)
         {
-            // The run token is already cancelled, so the interrupt goes out on its own control-timeout deadline instead.
+            // The run token is unusable here - cancelled or stalled out - so the interrupt goes out on its own control-timeout deadline instead.
             try
             {
-                Log.Warning("Cancellation requested; interrupting the job on the instance (POST /interrupt)...");
+                Log.Warning("Interrupting the job on the instance (POST /interrupt)...");
                 await _comfyUiClient.InterruptExecution(comfyUiAddress, CancellationToken.None);
                 Log.Warning("Interrupted the job on the instance.");
             }
@@ -178,13 +194,13 @@ namespace SeedVr.Remote
             }
         }
 
-        /// <summary>Best-effort cancel of the cancelled run's wrapper request, so it does not keep burning GPU time.</summary>
+        /// <summary>Best-effort cancel of an abandoned (cancelled or stalled) run's wrapper request, so it does not keep burning GPU time.</summary>
         private async Task CancelWrapperJob(string wrapperAddress, string requestId)
         {
-            // The run token is already cancelled, so the cancel goes out on its own control-timeout deadline instead.
+            // The run token is unusable here - cancelled or stalled out - so the cancel goes out on its own control-timeout deadline instead.
             try
             {
-                Log.Warning("Cancellation requested; cancelling request {RequestId} on the wrapper (POST /cancel)...", [requestId]);
+                Log.Warning("Cancelling request {RequestId} on the wrapper (POST /cancel)...", [requestId]);
                 await _comfyWrapperClient.CancelRequest(wrapperAddress, requestId, CancellationToken.None);
                 Log.Warning("Cancelled the wrapper request.");
             }

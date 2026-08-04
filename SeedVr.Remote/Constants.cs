@@ -26,6 +26,7 @@ namespace SeedVr.Remote
             public const int LogPollSeconds = 2;
             public const int LogPollTimeoutSeconds = 5;
             public const int MessageBufferSize = 8192;
+            public const int SocketCloseTimeoutSeconds = 5;
         }
 
         public static class Wrapper

@@ -34,16 +34,16 @@ namespace SeedVr.Remote.HttpClients
         {
             var tracker = ProgressTracker.CreateStandard(progressContext);
 
-            await TrackLiveProgress(comfyUiAddress, clientId, promptId, tracker, cancellationToken);
+            var sawRunEnd = await TrackLiveProgress(comfyUiAddress, clientId, promptId, tracker, cancellationToken);
 
-            var completedEntry = await PollHistoryUntilComplete(comfyUiAddress, promptId, cancellationToken);
+            var completedEntry = await PollHistoryForOutcome(comfyUiAddress, promptId, sawRunEnd, cancellationToken);
             var trace = tracker.Complete(completedEntry != null);
             EstimatorTraceStore.SaveForPrompt(promptId, trace);
             return completedEntry;
         }
 
-        /// <summary>Feeds the tracker from the progress socket and the phase-line poll at once, stopping the poll once the socket loop ends.</summary>
-        private async Task TrackLiveProgress(string comfyUiAddress, string clientId, string promptId, ProgressTracker tracker, CancellationToken cancellationToken)
+        /// <summary>Feeds the tracker from the progress socket and the phase-line poll at once, stopping the poll once the socket loop ends. True when the socket saw the run end.</summary>
+        private async Task<bool> TrackLiveProgress(string comfyUiAddress, string clientId, string promptId, ProgressTracker tracker, CancellationToken cancellationToken)
         {
             // SeedVR2's phase/batch lines drive the phase-batch estimator; poll them alongside the socket that feeds the percent-based ones.
             using var logCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -52,7 +52,8 @@ namespace SeedVr.Remote.HttpClients
             try
             {
                 // Best-effort live progress; the socket reports done or drops, then /history decides the outcome.
-                await ReportJobProgressFromSocket(comfyUiAddress, clientId, promptId, tracker, cancellationToken);
+                var sawRunEnd = await ReportJobProgressFromSocket(comfyUiAddress, clientId, promptId, tracker, cancellationToken);
+                return sawRunEnd;
             }
             finally
             {
@@ -60,8 +61,9 @@ namespace SeedVr.Remote.HttpClients
             }
         }
 
-        /// <summary>Reports the job's progress until the socket signals the run is over or the connection drops.</summary>
-        private async Task ReportJobProgressFromSocket(string comfyUiAddress, string clientId, string promptId, ProgressTracker tracker, CancellationToken cancellationToken)
+        /// <summary>Reports the job's progress until the socket signals the run is over, the connection drops, or the
+        /// stall deadline runs down with no progress recorded. True when the socket saw the run end.</summary>
+        private async Task<bool> ReportJobProgressFromSocket(string comfyUiAddress, string clientId, string promptId, ProgressTracker tracker, CancellationToken cancellationToken)
         {
             using var socket = new ClientWebSocket();
             if (!string.IsNullOrWhiteSpace(_appSettings.AuthToken))
@@ -70,43 +72,63 @@ namespace SeedVr.Remote.HttpClients
             }
 
             var socketUri = GetWebSocketUri(comfyUiAddress, clientId);
+
+            // The stall deadline bounds the connect and every receive, and only a recorded progress frame re-arms it, so a silently hung job cannot hold the tracking forever.
+            using var stallDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            stallDeadline.CancelAfter(TimeSpan.FromSeconds(_appSettings.ProcessingStallTimeoutSeconds));
             try
             {
-                await socket.ConnectAsync(socketUri, cancellationToken);
-                await ReceiveMessagesUntilJobComplete(socket, promptId, tracker, cancellationToken);
+                await socket.ConnectAsync(socketUri, stallDeadline.Token);
+                var sawRunEnd = await ReceiveMessagesUntilJobComplete(socket, promptId, tracker, stallDeadline);
+                return sawRunEnd;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException($"The job reported no progress for {_appSettings.ProcessingStallTimeoutSeconds} seconds.");
             }
             catch (WebSocketException ex)
             {
                 // The socket is best-effort; /history still tracks the job, so log and fall back to polling.
                 Log.Warning(ex, "The ComfyUI progress socket dropped; falling back to /history polling.");
+                return false;
             }
             finally
             {
-                if (socket.State == WebSocketState.Open)
-                {
-                    try
-                    {
-                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancellationToken);
-                    }
-                    catch (WebSocketException)
-                    {
-                        // The job is already tracked by /history, so a failed courtesy close does not matter.
-                    }
-                }
+                await CloseSocket(socket);
             }
         }
 
-        /// <summary>Reads messages until an "executing" (null node), "execution_success" or "execution_error" for this prompt, or the socket closes.</summary>
-        private async Task ReceiveMessagesUntilJobComplete(ClientWebSocket socket, string promptId, ProgressTracker tracker, CancellationToken cancellationToken)
+        /// <summary>Courtesy close on its own short deadline: the run's outcome comes from /history either way, and a
+        /// hung or already-cancelled connection must not stall the unwind, so a failed close is ignored.</summary>
+        private async Task CloseSocket(ClientWebSocket socket)
+        {
+            if (socket.State != WebSocketState.Open)
+            {
+                return;
+            }
+
+            using var closeTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(Constants.ComfyUi.SocketCloseTimeoutSeconds));
+            try
+            {
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, closeTimeout.Token);
+            }
+            catch (Exception ex) when (ex is WebSocketException or OperationCanceledException)
+            {
+            }
+        }
+
+        /// <summary>Reads messages until an "executing" (null node), "execution_success" or "execution_error" for this prompt (true),
+        /// or the socket closes first (false). Each recorded progress frame re-arms the stall deadline; anything else lets it run down.</summary>
+        private async Task<bool> ReceiveMessagesUntilJobComplete(ClientWebSocket socket, string promptId, ProgressTracker tracker, CancellationTokenSource stallDeadline)
         {
             var buffer = new byte[Constants.ComfyUi.MessageBufferSize];
             while (socket.State == WebSocketState.Open)
             {
-                var messageRaw = await ReceiveNextMessage(socket, buffer, cancellationToken);
+                var messageRaw = await ReceiveNextMessage(socket, buffer, stallDeadline.Token);
                 if (messageRaw == null)
                 {
                     // The socket closed; /history takes over.
-                    return;
+                    return false;
                 }
 
                 if (messageRaw.Length == 0)
@@ -127,12 +149,19 @@ namespace SeedVr.Remote.HttpClients
                     continue;
                 }
 
-                var jobDone = ProcessNextMessage(message, promptId, tracker);
-                if (jobDone)
+                var outcome = ProcessNextMessage(message, promptId, tracker);
+                if (outcome == SocketMessageOutcome.RunComplete)
                 {
-                    return;
+                    return true;
+                }
+
+                if (outcome == SocketMessageOutcome.ProgressRecorded)
+                {
+                    stallDeadline.CancelAfter(TimeSpan.FromSeconds(_appSettings.ProcessingStallTimeoutSeconds));
                 }
             }
+
+            return false;
         }
 
         /// <summary>Reassembles one WebSocket message: the JSON text, null when the socket closed, or empty for a binary frame.</summary>
@@ -163,12 +192,12 @@ namespace SeedVr.Remote.HttpClients
             return text;
         }
 
-        /// <summary>Reports what the message carries and returns true when it marks the end of this prompt's run.</summary>
-        private bool ProcessNextMessage(ComfyUiSocketMessage message, string promptId, ProgressTracker tracker)
+        /// <summary>Reports what the message carries: the end of this prompt's run, a recorded progress frame, or nothing of note.</summary>
+        private SocketMessageOutcome ProcessNextMessage(ComfyUiSocketMessage message, string promptId, ProgressTracker tracker)
         {
             if (message == null)
             {
-                return false;
+                return SocketMessageOutcome.Skipped;
             }
 
             var data = message.Data;
@@ -176,7 +205,7 @@ namespace SeedVr.Remote.HttpClients
             // A shared socket carries other prompts' messages; ignore any message tagged with a different prompt.
             if (data?.PromptId != null && data.PromptId != promptId)
             {
-                return false;
+                return SocketMessageOutcome.Skipped;
             }
 
             if (message.Type == Constants.ComfyUi.SocketExecutionError)
@@ -184,20 +213,27 @@ namespace SeedVr.Remote.HttpClients
                 Log.Warning("ComfyUI reported an execution error; confirming the outcome via /history.");
             }
 
-            RecordPercent(message.Type, data, tracker);
+            var progressRecorded = RecordPercent(message.Type, data, tracker);
 
-            var isRunComplete = IsRunComplete(message.Type, data);
-            return isRunComplete;
+            if (IsRunComplete(message.Type, data))
+            {
+                return SocketMessageOutcome.RunComplete;
+            }
+
+            return progressRecorded ? SocketMessageOutcome.ProgressRecorded : SocketMessageOutcome.Skipped;
         }
 
-        /// <summary>Feeds a progress frame's percent (value/max scaled to 0-100) to the estimator tracker.</summary>
-        private void RecordPercent(string messageType, ComfyUiSocketData data, ProgressTracker tracker)
+        /// <summary>Feeds a progress frame's percent (value/max scaled to 0-100) to the estimator tracker. True when one was recorded.</summary>
+        private bool RecordPercent(string messageType, ComfyUiSocketData data, ProgressTracker tracker)
         {
             if (messageType == Constants.ComfyUi.SocketProgress && data != null && data.Value != null && data.Max is > 0)
             {
                 var percent = 100.0 * data.Value.Value / data.Max.Value;
                 tracker.RecordPercent(percent);
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>execution_success and execution_error both end the run, as does an "executing" message with a null node.</summary>
@@ -209,6 +245,30 @@ namespace SeedVr.Remote.HttpClients
                 Constants.ComfyUi.SocketExecuting => data?.Node == null,
                 _ => false
             };
+        }
+
+        /// <summary>Resolves the run's outcome over /history. When the socket saw the run end, the entry lands within
+        /// seconds, so the poll runs under the stall deadline; when the socket dropped mid-run, the poll is the only
+        /// tracker left for a possibly healthy long job with no percent signal to re-arm on, so it stays unbounded.</summary>
+        private async Task<ComfyUiHistoryEntry> PollHistoryForOutcome(string comfyUiAddress, string promptId, bool sawRunEnd, CancellationToken cancellationToken)
+        {
+            if (!sawRunEnd)
+            {
+                var entry = await PollHistoryUntilComplete(comfyUiAddress, promptId, cancellationToken);
+                return entry;
+            }
+
+            using var stallDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            stallDeadline.CancelAfter(TimeSpan.FromSeconds(_appSettings.ProcessingStallTimeoutSeconds));
+            try
+            {
+                var entry = await PollHistoryUntilComplete(comfyUiAddress, promptId, stallDeadline.Token);
+                return entry;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException($"/history did not record the finished job within {_appSettings.ProcessingStallTimeoutSeconds} seconds.");
+            }
         }
 
         /// <summary>Polls /history until the job is recorded as finished; the completed entry when it succeeded, null otherwise.</summary>

@@ -12,6 +12,15 @@ namespace SeedVr.Remote.Models.ComfyUi
         public ComfyUiSocketData Data { get; set; }
     }
 
+    /// <summary>What a socket frame contributed to the tracking, so the receive loop knows when to stop and when to re-arm the stall deadline.</summary>
+    public enum SocketMessageOutcome
+    {
+        Unknown,
+        Skipped,
+        ProgressRecorded,
+        RunComplete
+    }
+
     public class ComfyUiSocketData
     {
         /// <summary>Tags the frame with the job it belongs to, so a shared socket's other jobs are ignored.</summary>

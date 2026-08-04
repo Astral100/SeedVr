@@ -38,8 +38,8 @@ namespace SeedVr.Remote.HttpClients
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    // A per-request timeout fired, not the run's cancellation, so skip this poll and keep tracking.
-                    Log.Warning("The ComfyUI log poll (/internal/logs/raw) timed out; retrying on the next interval.");
+                    // A per-request timeout, not the run's cancellation. Routine under heavy GPU load and lossless -
+                    // the next answered poll re-reads the buffer from the cursor - so it is not worth a log line.
                 }
                 catch (HttpRequestException ex)
                 {
