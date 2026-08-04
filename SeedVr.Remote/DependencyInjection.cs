@@ -19,6 +19,7 @@ namespace SeedVr.Remote
                         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                     });
 
+            services.AddTransient<GpuRecovery>();
             services.AddTransient<PhaseLinePoller>();
             services.AddTransient<ComfyProgressClient>();
             services.AddTransient<WrapperProgressClient>();
