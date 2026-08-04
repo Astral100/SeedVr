@@ -38,7 +38,8 @@ namespace SeedVr.Remote.HttpClients
 
             var completedEntry = await PollHistoryForOutcome(comfyUiAddress, promptId, sawRunEnd, cancellationToken);
             var trace = tracker.Complete(completedEntry != null);
-            EstimatorTraceStore.SaveForPrompt(promptId, trace);
+            trace.RunId = promptId;
+            EstimatorTraceStore.SaveSnapshot(trace);
             return completedEntry;
         }
 

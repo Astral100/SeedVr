@@ -7,6 +7,9 @@ namespace SeedVr.Estimators.Tracing
     /// <summary>A completed run's context, ordered signals, live predictions and observed completion time.</summary>
     public class EstimatorRunTrace
     {
+        /// <summary>The remote run this snapshot recorded: the ComfyUI prompt id or the wrapper request id.</summary>
+        public string RunId { get; set; }
+
         public JobProgressContext Context { get; set; }
         public List<EstimatorTraceSample> Samples { get; set; } = [];
         public double? ProcessingCompletedSeconds { get; set; }

@@ -45,6 +45,8 @@ namespace SeedVr.Remote
             }
 
             Log.Information("Vast.ai instance {InstanceId} is ready to run the job.", [availableInstance.Id]);
+            var hostProfile = availableInstance.GetHostProfile();
+            Log.Information("Host machine {MachineId}: {GpuName} (dlperf {Dlperf:F1}), {CpuName} ({CpuCoresEffective:F0}/{CpuCoresTotal} cores), {CpuRamGb:F1} GB RAM allotted, disk {DiskBandwidthMbps:F0} MB/s, PCIe {PcieBandwidthGbps:F1} GB/s.", [hostProfile.MachineId, hostProfile.GpuName, hostProfile.Dlperf, hostProfile.CpuName, hostProfile.CpuCoresEffective, hostProfile.CpuCoresTotal, hostProfile.CpuRamGb, hostProfile.DiskBandwidthMbps, hostProfile.PcieBandwidthGbps]);
             return availableInstance;
         }
 

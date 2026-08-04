@@ -17,9 +17,10 @@ namespace SeedVr.Estimators
         public const double PostSetupSeconds = 0.0;
         public const double PostPerBatchSeconds = 5.0;
 
-        public const double MinimumRunSpeedFactor = 0.75;
-        public const double MaximumRunSpeedFactor = 1.35;
-        public const double RunSpeedLearningRate = 0.2;
+        public const double MinimumRunSpeedFactor = 0.5;
+        public const double MaximumRunSpeedFactor = 2.0;
+        public const double RunSpeedLearningRate = 0.35;
+        public const double MaximumRunSpeedLearningWeight = 0.8;
         public const double PhaseBatchRefinementAlpha = 0.25;
 
         public const double DemaAlpha = 0.3;
@@ -27,10 +28,13 @@ namespace SeedVr.Estimators
         public const double DemaMaximumRateFactor = 2.0;
 
         public const double HybridMinimumLiveWeight = 0.15;
-        public const double HybridMaximumLiveWeight = 0.8;
-        public const double HybridMaximumDeviationSeconds = 15.0;
+        public const double HybridMaximumLiveWeight = 0.9;
+        public const double HybridDeviationFloorSeconds = 15.0;
+        public const double HybridDeviationFraction = 0.35;
         public const int ProgressLogPercentInterval = 10;
 
         public const string TraceDirectory = "logs";
+        public const string SnapshotFilePrefix = "RunSnapshot";
+        public const string SnapshotTimestampFormat = "yyyy.MM.dd HH-mm-ss";
     }
 }

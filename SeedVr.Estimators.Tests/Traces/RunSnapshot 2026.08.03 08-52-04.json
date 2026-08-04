@@ -1,0 +1,1206 @@
+{
+  "RunId": "d4cd2660-4682-48c6-b480-fc7a0c1d8a3d",
+  "Context": {
+    "FrameCount": 300,
+    "BatchSize": 33,
+    "InputWidth": 704,
+    "InputHeight": 1280,
+    "TargetResolution": 1080,
+    "BatchCount": 10,
+    "PaddedFrameCount": 330,
+    "OutputPixelCount": 2121120,
+    "PixelScale": 1.001019367991845,
+    "BatchWorkScale": 1.001019367991845,
+    "FinalizationSeconds": 75.07645259938839
+  },
+  "Samples": [
+    {
+      "ElapsedSeconds": 0.0004879,
+      "SignalElapsedSeconds": -3.0517722,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": {
+        "naive-linear": null,
+        "percent-dema": null,
+        "frame-linear": 1059.3755351,
+        "phase-batch": 1050.0160157,
+        "adaptive-hybrid": 1050.0160157
+      }
+    },
+    {
+      "ElapsedSeconds": 2.688412,
+      "SignalElapsedSeconds": 0.7663552,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": null,
+        "percent-dema": null,
+        "frame-linear": 1059.3755351,
+        "phase-batch": 1050.0160157,
+        "adaptive-hybrid": 1050.0160157
+      }
+    },
+    {
+      "ElapsedSeconds": 19.8025995,
+      "SignalElapsedSeconds": null,
+      "Percent": 2,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1065.2064275,
+        "percent-dema": null,
+        "frame-linear": 1061.1248028,
+        "phase-batch": 1050.0160157,
+        "adaptive-hybrid": 1052.4610157
+      }
+    },
+    {
+      "ElapsedSeconds": 21.4230344,
+      "SignalElapsedSeconds": 19.608134,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1065.2064275,
+        "percent-dema": null,
+        "frame-linear": 1061.1248028,
+        "phase-batch": 1045.8182201,
+        "adaptive-hybrid": 1048.26322
+      }
+    },
+    {
+      "ElapsedSeconds": 39.2286871,
+      "SignalElapsedSeconds": null,
+      "Percent": 4,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1055.79363,
+        "percent-dema": 1046.7573444,
+        "frame-linear": 1059.525451,
+        "phase-batch": 1045.8182201,
+        "adaptive-hybrid": 1046.7786991
+      }
+    },
+    {
+      "ElapsedSeconds": 39.9855089,
+      "SignalElapsedSeconds": 39.0334689,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1055.79363,
+        "percent-dema": 1046.7573444,
+        "frame-linear": 1059.525451,
+        "phase-batch": 1043.9464024,
+        "adaptive-hybrid": 1045.2363213
+      }
+    },
+    {
+      "ElapsedSeconds": 58.3798591,
+      "SignalElapsedSeconds": null,
+      "Percent": 6,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1048.0741042,
+        "percent-dema": 1039.8466869,
+        "frame-linear": 1056.090047,
+        "phase-batch": 1043.9464024,
+        "adaptive-hybrid": 1043.9490471
+      }
+    },
+    {
+      "ElapsedSeconds": 61.2492349,
+      "SignalElapsedSeconds": 58.1876501,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1048.0741042,
+        "percent-dema": 1039.8466869,
+        "frame-linear": 1056.090047,
+        "phase-batch": 1042.0352001,
+        "adaptive-hybrid": 1042.399062
+      }
+    },
+    {
+      "ElapsedSeconds": 77.6287256,
+      "SignalElapsedSeconds": null,
+      "Percent": 8,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1045.4355225,
+        "percent-dema": 1038.4083992,
+        "frame-linear": 1052.8936896,
+        "phase-batch": 1042.0352001,
+        "adaptive-hybrid": 1042.0123257
+      }
+    },
+    {
+      "ElapsedSeconds": 79.8769776,
+      "SignalElapsedSeconds": 77.4390406,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1045.4355225,
+        "percent-dema": 1038.4083992,
+        "frame-linear": 1052.8936896,
+        "phase-batch": 1040.7688674,
+        "adaptive-hybrid": 1041.0017922
+      }
+    },
+    {
+      "ElapsedSeconds": 97.2341805,
+      "SignalElapsedSeconds": null,
+      "Percent": 10,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1047.4182575,
+        "percent-dema": 1046.1681468,
+        "frame-linear": 1051.25106,
+        "phase-batch": 1040.7688674,
+        "adaptive-hybrid": 1042.0640993
+      }
+    },
+    {
+      "ElapsedSeconds": 98.6300684,
+      "SignalElapsedSeconds": 96.9344878,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1047.4182575,
+        "percent-dema": 1046.1681468,
+        "frame-linear": 1051.25106,
+        "phase-batch": 1040.1980638,
+        "adaptive-hybrid": 1041.6160185
+      }
+    },
+    {
+      "ElapsedSeconds": 117.0127747,
+      "SignalElapsedSeconds": null,
+      "Percent": 12,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1050.1829084,
+        "percent-dema": 1054.694425,
+        "frame-linear": 1050.9306145,
+        "phase-batch": 1040.1980638,
+        "adaptive-hybrid": 1042.9889212
+      }
+    },
+    {
+      "ElapsedSeconds": 119.8519978,
+      "SignalElapsedSeconds": 116.8203588,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1050.1829084,
+        "percent-dema": 1054.694425,
+        "frame-linear": 1050.9306145,
+        "phase-batch": 1040.3279737,
+        "adaptive-hybrid": 1043.0892117
+      }
+    },
+    {
+      "ElapsedSeconds": 136.2731036,
+      "SignalElapsedSeconds": null,
+      "Percent": 13,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1123.3310956,
+        "percent-dema": 1350.5939184,
+        "frame-linear": 1072.6507589,
+        "phase-batch": 1040.3279737,
+        "adaptive-hybrid": 1043.8454737
+      }
+    },
+    {
+      "ElapsedSeconds": 138.3206456,
+      "SignalElapsedSeconds": 136.0817578,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1123.3310956,
+        "percent-dema": 1350.5939184,
+        "frame-linear": 1072.6507589,
+        "phase-batch": 1039.7033887,
+        "adaptive-hybrid": 1043.2208887
+      }
+    },
+    {
+      "ElapsedSeconds": 157.3042003,
+      "SignalElapsedSeconds": null,
+      "Percent": 16,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1058.2277044,
+        "percent-dema": 1011.1116535,
+        "frame-linear": 1068.3238425,
+        "phase-batch": 1039.7033887,
+        "adaptive-hybrid": 1038.4248264
+      }
+    },
+    {
+      "ElapsedSeconds": 159.3565379,
+      "SignalElapsedSeconds": 157.1120839,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1058.2277044,
+        "percent-dema": 1011.1116535,
+        "frame-linear": 1068.3238425,
+        "phase-batch": 1041.2179911,
+        "adaptive-hybrid": 1039.5547198
+      }
+    },
+    {
+      "ElapsedSeconds": 177.3871077,
+      "SignalElapsedSeconds": null,
+      "Percent": 18,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1060.5603842,
+        "percent-dema": 1037.3511769,
+        "frame-linear": 1065.994805,
+        "phase-batch": 1041.2179911,
+        "adaptive-hybrid": 1043.2839808
+      }
+    },
+    {
+      "ElapsedSeconds": 177.9105588,
+      "SignalElapsedSeconds": 177.1945949,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1060.5603842,
+        "percent-dema": 1037.3511769,
+        "frame-linear": 1065.994805,
+        "phase-batch": 1041.5275194,
+        "adaptive-hybrid": 1043.5108651
+      }
+    },
+    {
+      "ElapsedSeconds": 197.3505462,
+      "SignalElapsedSeconds": null,
+      "Percent": 20,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1061.8291835,
+        "percent-dema": 1051.5879875,
+        "frame-linear": 1064.7451186,
+        "phase-batch": 1041.5275194,
+        "adaptive-hybrid": 1045.7275194
+      }
+    },
+    {
+      "ElapsedSeconds": 199.014767,
+      "SignalElapsedSeconds": 197.2296634,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1061.8291835,
+        "percent-dema": 1051.5879875,
+        "frame-linear": 1064.7451186,
+        "phase-batch": 1035.3288189,
+        "adaptive-hybrid": 1039.5288189
+      }
+    },
+    {
+      "ElapsedSeconds": 199.0229694,
+      "SignalElapsedSeconds": 197.3757719,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1061.8291835,
+        "percent-dema": 1051.5879875,
+        "frame-linear": 1064.7451186,
+        "phase-batch": 1035.3288189,
+        "adaptive-hybrid": 1039.5288189
+      }
+    },
+    {
+      "ElapsedSeconds": 220.8633738,
+      "SignalElapsedSeconds": null,
+      "Percent": 22,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1079.0008789,
+        "percent-dema": 1127.0003794,
+        "frame-linear": 1069.0218467,
+        "phase-batch": 1035.3288189,
+        "adaptive-hybrid": 1039.7238189
+      }
+    },
+    {
+      "ElapsedSeconds": 223.4690094,
+      "SignalElapsedSeconds": 220.6692604,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1079.0008789,
+        "percent-dema": 1127.0003794,
+        "frame-linear": 1069.0218467,
+        "phase-batch": 1034.1372589,
+        "adaptive-hybrid": 1038.5322589
+      }
+    },
+    {
+      "ElapsedSeconds": 238.8484562,
+      "SignalElapsedSeconds": null,
+      "Percent": 25,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1030.4702773,
+        "percent-dema": 888.9320483,
+        "frame-linear": 1057.4563759,
+        "phase-batch": 1034.1372589,
+        "adaptive-hybrid": 1029.4497589
+      }
+    },
+    {
+      "ElapsedSeconds": 239.2598113,
+      "SignalElapsedSeconds": 238.6583118,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1030.4702773,
+        "percent-dema": 888.9320483,
+        "frame-linear": 1057.4563759,
+        "phase-batch": 1021.7390368,
+        "adaptive-hybrid": 1017.0515368
+      }
+    },
+    {
+      "ElapsedSeconds": 262.7695437,
+      "SignalElapsedSeconds": null,
+      "Percent": 27,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1048.2969848,
+        "percent-dema": 1006.3494262,
+        "frame-linear": 1054.7085586,
+        "phase-batch": 1021.7390368,
+        "adaptive-hybrid": 1023.5566837
+      }
+    },
+    {
+      "ElapsedSeconds": 265.5192937,
+      "SignalElapsedSeconds": 262.5744926,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1048.2969848,
+        "percent-dema": 1006.3494262,
+        "frame-linear": 1054.7085586,
+        "phase-batch": 1023.6281256,
+        "adaptive-hybrid": 1024.8308741
+      }
+    },
+    {
+      "ElapsedSeconds": 296.2025716,
+      "SignalElapsedSeconds": null,
+      "Percent": 30,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1062.4183579,
+        "percent-dema": 1073.9899676,
+        "frame-linear": 1057.0214984,
+        "phase-batch": 1023.6281256,
+        "adaptive-hybrid": 1028.8031256
+      }
+    },
+    {
+      "ElapsedSeconds": 297.1734323,
+      "SignalElapsedSeconds": 296.0085207,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1062.4183579,
+        "percent-dema": 1073.9899676,
+        "frame-linear": 1057.0214984,
+        "phase-batch": 1041.3201249,
+        "adaptive-hybrid": 1046.4951249
+      }
+    },
+    {
+      "ElapsedSeconds": 318.4704735,
+      "SignalElapsedSeconds": null,
+      "Percent": 32,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1070.2966822,
+        "percent-dema": 1116.4060932,
+        "frame-linear": 1061.0040535,
+        "phase-batch": 1041.3201249,
+        "adaptive-hybrid": 1046.6901249
+      }
+    },
+    {
+      "ElapsedSeconds": 320.8506553,
+      "SignalElapsedSeconds": 318.2696248,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1070.2966822,
+        "percent-dema": 1116.4060932,
+        "frame-linear": 1061.0040535,
+        "phase-batch": 1038.3880832,
+        "adaptive-hybrid": 1043.7580831
+      }
+    },
+    {
+      "ElapsedSeconds": 337.7385382,
+      "SignalElapsedSeconds": null,
+      "Percent": 35,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1040.0437045,
+        "percent-dema": 934.6023652,
+        "frame-linear": 1054.7159488,
+        "phase-batch": 1038.3880832,
+        "adaptive-hybrid": 1032.7255832
+      }
+    },
+    {
+      "ElapsedSeconds": 339.6704879,
+      "SignalElapsedSeconds": 337.5429787,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1040.0437045,
+        "percent-dema": 934.6023652,
+        "frame-linear": 1054.7159488,
+        "phase-batch": 1031.9627354,
+        "adaptive-hybrid": 1026.3002354
+      }
+    },
+    {
+      "ElapsedSeconds": 357.408186,
+      "SignalElapsedSeconds": null,
+      "Percent": 37,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1041.0445228,
+        "percent-dema": 981.4125189,
+        "frame-linear": 1050.614521,
+        "phase-batch": 1031.9627354,
+        "adaptive-hybrid": 1026.1052353
+      }
+    },
+    {
+      "ElapsedSeconds": 358.2547141,
+      "SignalElapsedSeconds": 357.2132406,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1041.0445228,
+        "percent-dema": 981.4125189,
+        "frame-linear": 1050.614521,
+        "phase-batch": 1027.2505386,
+        "adaptive-hybrid": 1021.3930386
+      }
+    },
+    {
+      "ElapsedSeconds": 375.6493996,
+      "SignalElapsedSeconds": null,
+      "Percent": 40,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1014.1999515,
+        "percent-dema": 876.8402344,
+        "frame-linear": 1039.6901502,
+        "phase-batch": 1027.2505386,
+        "adaptive-hybrid": 1021.1005386
+      }
+    },
+    {
+      "ElapsedSeconds": 376.771049,
+      "SignalElapsedSeconds": 375.4503977,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1014.1999515,
+        "percent-dema": 876.8402344,
+        "frame-linear": 1039.6901502,
+        "phase-batch": 1021.81279,
+        "adaptive-hybrid": 1015.66279
+      }
+    },
+    {
+      "ElapsedSeconds": 390.9492102,
+      "SignalElapsedSeconds": null,
+      "Percent": 42,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1005.9079054,
+        "percent-dema": 884.8393112,
+        "frame-linear": 1029.5554767,
+        "phase-batch": 1021.81279,
+        "adaptive-hybrid": 1015.46779
+      }
+    },
+    {
+      "ElapsedSeconds": 392.4605678,
+      "SignalElapsedSeconds": 390.752585,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1005.9079054,
+        "percent-dema": 884.8393112,
+        "frame-linear": 1029.5554767,
+        "phase-batch": 1014.3480755,
+        "adaptive-hybrid": 1008.0030755
+      }
+    },
+    {
+      "ElapsedSeconds": 423.9152011,
+      "SignalElapsedSeconds": null,
+      "Percent": 45,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.1102328,
+        "percent-dema": 971.5236028,
+        "frame-linear": 1025.8219036,
+        "phase-batch": 1014.3480755,
+        "adaptive-hybrid": 1007.7105755
+      }
+    },
+    {
+      "ElapsedSeconds": 426.6098404,
+      "SignalElapsedSeconds": 423.7471834,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.1102328,
+        "percent-dema": 971.5236028,
+        "frame-linear": 1025.8219036,
+        "phase-batch": 1024.8626551,
+        "adaptive-hybrid": 1018.2251551
+      }
+    },
+    {
+      "ElapsedSeconds": 426.6100017,
+      "SignalElapsedSeconds": 424.6998796,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.1102328,
+        "percent-dema": 971.5236028,
+        "frame-linear": 1025.8219036,
+        "phase-batch": 1024.8626551,
+        "adaptive-hybrid": 1018.2251551
+      }
+    },
+    {
+      "ElapsedSeconds": 470.770009,
+      "SignalElapsedSeconds": null,
+      "Percent": 50,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.6164705,
+        "percent-dema": 995.0995607,
+        "frame-linear": 1023.0602737,
+        "phase-batch": 1024.8626551,
+        "adaptive-hybrid": 1017.7376551
+      }
+    },
+    {
+      "ElapsedSeconds": 471.9101865,
+      "SignalElapsedSeconds": 470.6439925,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.6164705,
+        "percent-dema": 995.0995607,
+        "frame-linear": 1023.0602737,
+        "phase-batch": 1019.6482063,
+        "adaptive-hybrid": 1013.0978657
+      }
+    },
+    {
+      "ElapsedSeconds": 517.4505651,
+      "SignalElapsedSeconds": null,
+      "Percent": 55,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1015.8956618,
+        "percent-dema": 1006.9363654,
+        "frame-linear": 1020.9108901,
+        "phase-batch": 1019.6482063,
+        "adaptive-hybrid": 1015.4703685
+      }
+    },
+    {
+      "ElapsedSeconds": 519.0897569,
+      "SignalElapsedSeconds": 517.2512267,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1015.8956618,
+        "percent-dema": 1006.9363654,
+        "frame-linear": 1020.9108901,
+        "phase-batch": 1017.1748277,
+        "adaptive-hybrid": 1014.2522295
+      }
+    },
+    {
+      "ElapsedSeconds": 565.0509976,
+      "SignalElapsedSeconds": null,
+      "Percent": 60,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.8281152,
+        "percent-dema": 1017.2263524,
+        "frame-linear": 1019.6860576,
+        "phase-batch": 1017.1748277,
+        "adaptive-hybrid": 1017.0951269
+      }
+    },
+    {
+      "ElapsedSeconds": 566.8548777,
+      "SignalElapsedSeconds": 564.8539057,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.8281152,
+        "percent-dema": 1017.2263524,
+        "frame-linear": 1019.6860576,
+        "phase-batch": 1017.237861,
+        "adaptive-hybrid": 1017.1241223
+      }
+    },
+    {
+      "ElapsedSeconds": 611.0920781,
+      "SignalElapsedSeconds": null,
+      "Percent": 65,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1015.2181112,
+        "percent-dema": 1014.6159088,
+        "frame-linear": 1018.3456737,
+        "phase-batch": 1017.237861,
+        "adaptive-hybrid": 1015.9091738
+      }
+    },
+    {
+      "ElapsedSeconds": 612.6001558,
+      "SignalElapsedSeconds": 610.8446455,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1015.2181112,
+        "percent-dema": 1014.6159088,
+        "frame-linear": 1018.3456737,
+        "phase-batch": 1014.6152016,
+        "adaptive-hybrid": 1014.7879869
+      }
+    },
+    {
+      "ElapsedSeconds": 660.3584441,
+      "SignalElapsedSeconds": null,
+      "Percent": 70,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.4456584,
+        "percent-dema": 1025.6853427,
+        "frame-linear": 1018.3756691,
+        "phase-batch": 1014.6152016,
+        "adaptive-hybrid": 1019.1226324
+      }
+    },
+    {
+      "ElapsedSeconds": 661.3522643,
+      "SignalElapsedSeconds": 660.1562202,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.4456584,
+        "percent-dema": 1025.6853427,
+        "frame-linear": 1018.3756691,
+        "phase-batch": 1017.6246776,
+        "adaptive-hybrid": 1020.3113754
+      }
+    },
+    {
+      "ElapsedSeconds": 706.7503621,
+      "SignalElapsedSeconds": null,
+      "Percent": 75,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.4102687,
+        "percent-dema": 1020.3120429,
+        "frame-linear": 1018.086049,
+        "phase-batch": 1017.6246776,
+        "adaptive-hybrid": 1018.4129324
+      }
+    },
+    {
+      "ElapsedSeconds": 709.5691196,
+      "SignalElapsedSeconds": 706.5485316,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.4102687,
+        "percent-dema": 1020.3120429,
+        "frame-linear": 1018.086049,
+        "phase-batch": 1016.1127377,
+        "adaptive-hybrid": 1017.8648542
+      }
+    },
+    {
+      "ElapsedSeconds": 754.5540324,
+      "SignalElapsedSeconds": null,
+      "Percent": 80,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.268993,
+        "percent-dema": 1021.5867939,
+        "frame-linear": 1018.1409322,
+        "phase-batch": 1016.1127377,
+        "adaptive-hybrid": 1018.668892
+      }
+    },
+    {
+      "ElapsedSeconds": 755.2468842,
+      "SignalElapsedSeconds": 754.3511693,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.268993,
+        "percent-dema": 1021.5867939,
+        "frame-linear": 1018.1409322,
+        "phase-batch": 1016.654645,
+        "adaptive-hybrid": 1018.8477214
+      }
+    },
+    {
+      "ElapsedSeconds": 800.955663,
+      "SignalElapsedSeconds": null,
+      "Percent": 85,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.3772325,
+        "percent-dema": 1018.1772527,
+        "frame-linear": 1017.9118223,
+        "phase-batch": 1016.654645,
+        "adaptive-hybrid": 1017.4432698
+      }
+    },
+    {
+      "ElapsedSeconds": 803.1670469,
+      "SignalElapsedSeconds": 800.7573121,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.3772325,
+        "percent-dema": 1018.1772527,
+        "frame-linear": 1017.9118223,
+        "phase-batch": 1015.5728654,
+        "adaptive-hybrid": 1017.1214403
+      }
+    },
+    {
+      "ElapsedSeconds": 846.9446931,
+      "SignalElapsedSeconds": null,
+      "Percent": 90,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.1261115,
+        "percent-dema": 1015.5892595,
+        "frame-linear": 1017.3761091,
+        "phase-batch": 1015.5728654,
+        "adaptive-hybrid": 1015.7822081
+      }
+    },
+    {
+      "ElapsedSeconds": 848.4128964,
+      "SignalElapsedSeconds": 846.7451083,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1016.1261115,
+        "percent-dema": 1015.5892595,
+        "frame-linear": 1017.3761091,
+        "phase-batch": 1014.2763639,
+        "adaptive-hybrid": 1015.4386352
+      }
+    },
+    {
+      "ElapsedSeconds": 895.3446397,
+      "SignalElapsedSeconds": null,
+      "Percent": 95,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.5444943,
+        "percent-dema": 1018.0678872,
+        "frame-linear": 1017.4266247,
+        "phase-batch": 1014.2763639,
+        "adaptive-hybrid": 1016.985506
+      }
+    },
+    {
+      "ElapsedSeconds": 895.823712,
+      "SignalElapsedSeconds": 895.2350413,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.5444943,
+        "percent-dema": 1018.0678872,
+        "frame-linear": 1017.4266247,
+        "phase-batch": 1019.9915418,
+        "adaptive-hybrid": 1018.3142848
+      }
+    },
+    {
+      "ElapsedSeconds": 895.8240021,
+      "SignalElapsedSeconds": 895.2351066,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.5444943,
+        "percent-dema": 1018.0678872,
+        "frame-linear": 1017.4266247,
+        "phase-batch": 1019.9915418,
+        "adaptive-hybrid": 1018.3142848
+      }
+    },
+    {
+      "ElapsedSeconds": 901.1921263,
+      "SignalElapsedSeconds": 900.3460413,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1017.5444943,
+        "percent-dema": 1018.0678872,
+        "frame-linear": 1017.4266247,
+        "phase-batch": 1020.2541756,
+        "adaptive-hybrid": 1018.3753472
+      }
+    },
+    {
+      "ElapsedSeconds": 905.4516035,
+      "SignalElapsedSeconds": null,
+      "Percent": 96,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.2552062,
+        "percent-dema": 1019.8911972,
+        "frame-linear": 1017.6751991,
+        "phase-batch": 1020.2541756,
+        "adaptive-hybrid": 1019.3401018
+      }
+    },
+    {
+      "ElapsedSeconds": 906.5769069,
+      "SignalElapsedSeconds": 905.2501293,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.2552062,
+        "percent-dema": 1019.8911972,
+        "frame-linear": 1017.6751991,
+        "phase-batch": 1020.002027,
+        "adaptive-hybrid": 1019.2831162
+      }
+    },
+    {
+      "ElapsedSeconds": 912.0333229,
+      "SignalElapsedSeconds": 909.751081,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.2552062,
+        "percent-dema": 1019.8911972,
+        "frame-linear": 1017.6751991,
+        "phase-batch": 1019.0364489,
+        "adaptive-hybrid": 1019.0648955
+      }
+    },
+    {
+      "ElapsedSeconds": 914.7519722,
+      "SignalElapsedSeconds": null,
+      "Percent": 97,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.1197229,
+        "percent-dema": 1018.6396559,
+        "frame-linear": 1017.8085562,
+        "phase-batch": 1019.0364489,
+        "adaptive-hybrid": 1018.5238481
+      }
+    },
+    {
+      "ElapsedSeconds": 917.2606674,
+      "SignalElapsedSeconds": 914.5505073,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.1197229,
+        "percent-dema": 1018.6396559,
+        "frame-linear": 1017.8085562,
+        "phase-batch": 1018.7956593,
+        "adaptive-hybrid": 1018.4709947
+      }
+    },
+    {
+      "ElapsedSeconds": 922.6618542,
+      "SignalElapsedSeconds": 920.4519309,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1018.1197229,
+        "percent-dema": 1018.6396559,
+        "frame-linear": 1017.8085562,
+        "phase-batch": 1020.2812472,
+        "adaptive-hybrid": 1018.7970813
+      }
+    },
+    {
+      "ElapsedSeconds": 925.2511571,
+      "SignalElapsedSeconds": null,
+      "Percent": 98,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1019.2102863,
+        "percent-dema": 1020.4484534,
+        "frame-linear": 1018.2290753,
+        "phase-batch": 1020.2812472,
+        "adaptive-hybrid": 1019.9256197
+      }
+    },
+    {
+      "ElapsedSeconds": 927.9744653,
+      "SignalElapsedSeconds": 925.0527173,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1019.2102863,
+        "percent-dema": 1020.4484534,
+        "frame-linear": 1018.2290753,
+        "phase-batch": 1019.7019271,
+        "adaptive-hybrid": 1019.8022245
+      }
+    },
+    {
+      "ElapsedSeconds": 933.4548697,
+      "SignalElapsedSeconds": 930.3523731,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1019.2102863,
+        "percent-dema": 1020.4484534,
+        "frame-linear": 1018.2290753,
+        "phase-batch": 1020.0917903,
+        "adaptive-hybrid": 1019.8852654
+      }
+    },
+    {
+      "ElapsedSeconds": 936.0560341,
+      "SignalElapsedSeconds": null,
+      "Percent": 99,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1020.5875981,
+        "percent-dema": 1021.621791,
+        "frame-linear": 1018.9366321,
+        "phase-batch": 1020.0917903,
+        "adaptive-hybrid": 1020.8955298
+      }
+    },
+    {
+      "ElapsedSeconds": 938.8637029,
+      "SignalElapsedSeconds": 935.8505363,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1020.5875981,
+        "percent-dema": 1021.621791,
+        "frame-linear": 1018.9366321,
+        "phase-batch": 1020.6331571,
+        "adaptive-hybrid": 1021.007322
+      }
+    },
+    {
+      "ElapsedSeconds": 941.6624997,
+      "SignalElapsedSeconds": 940.4534034,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1020.5875981,
+        "percent-dema": 1021.621791,
+        "frame-linear": 1018.9366321,
+        "phase-batch": 1020.1674272,
+        "adaptive-hybrid": 1020.9111488
+      }
+    },
+    {
+      "ElapsedSeconds": 945.7536785,
+      "SignalElapsedSeconds": null,
+      "Percent": 100,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": {
+        "naive-linear": 1020.830131,
+        "percent-dema": 1020.830131,
+        "frame-linear": 1019.5046818,
+        "phase-batch": 1020.1674272,
+        "adaptive-hybrid": 1020.6975902
+      }
+    }
+  ],
+  "ProcessingCompletedSeconds": 945.7536785,
+  "ActualTotalSeconds": 1005.6359073,
+  "Succeeded": true
+}

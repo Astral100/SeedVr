@@ -165,6 +165,14 @@ namespace SeedVr.Estimators.Estimators
             _phaseSpeedFactors[(int)phase] = Math.Clamp(factor, Constants.MinimumRunSpeedFactor, Constants.MaximumRunSpeedFactor);
         }
 
+        /// <summary>The reference-host finalization prior adapted to this host. Finalization varies across hosts well beyond the
+        /// phase speeds (59.9s vs 14.7s for the same 300-frame clip, while the phases differed ~1.3x), hence the squared factor.</summary>
+        public double GetAdaptedFinalizationSeconds()
+        {
+            var runSpeedFactor = GetRunSpeedFactor();
+            return _finalizationSeconds * runSpeedFactor * runSpeedFactor;
+        }
+
         private double GetRunSpeedFactor()
         {
             var observedFactors = _phaseSpeedFactors.Where(factor => factor != null).Select(factor => factor.Value).ToList();
@@ -173,8 +181,11 @@ namespace SeedVr.Estimators.Estimators
                 return 1.0;
             }
 
+            // Each measured phase earns the observed speed more say over the unmeasured ones; a single phase stays shrunk
+            // because phases differ individually, but two or three agreeing phases describe the host, not the phase.
             var observedAverage = observedFactors.Average();
-            return 1 + Constants.RunSpeedLearningRate * (observedAverage - 1);
+            var learningWeight = Math.Min(Constants.MaximumRunSpeedLearningWeight, Constants.RunSpeedLearningRate * observedFactors.Count);
+            return 1 + learningWeight * (observedAverage - 1);
         }
 
         private (double SetupSeconds, double PerBatchSeconds) GetPhasePrior(ProgressPhase phase)
@@ -196,17 +207,19 @@ namespace SeedVr.Estimators.Estimators
                 return EtaEstimate.Empty;
             }
 
+            var finalizationSeconds = GetAdaptedFinalizationSeconds();
+
             // Before any phase line, the estimate is the whole-run prior from t=0.
             if (_currentPhase == ProgressPhase.Unknown)
             {
-                var priorTotal = TimeSpan.FromSeconds(WholeRunCost() + _finalizationSeconds);
+                var priorTotal = TimeSpan.FromSeconds(WholeRunCost() + finalizationSeconds);
                 return EtaEstimate.FromTotal(priorTotal, elapsed);
             }
 
             // The current phase started at a known time; from there, count its whole cost plus every later phase. Progress within
             // the phase falls out of (total - elapsed) as time passes, and each boundary resets the anchor with corrected costs.
             var currentStart = _phaseStartElapsed[(int)_currentPhase] ?? elapsed;
-            var totalSeconds = currentStart.TotalSeconds + EstimatedWholeCost(_currentPhase) + FuturePhaseCost(_currentPhase) + _finalizationSeconds;
+            var totalSeconds = currentStart.TotalSeconds + EstimatedWholeCost(_currentPhase) + FuturePhaseCost(_currentPhase) + finalizationSeconds;
             var total = TimeSpan.FromSeconds(totalSeconds);
             return EtaEstimate.FromTotal(total, elapsed);
         }

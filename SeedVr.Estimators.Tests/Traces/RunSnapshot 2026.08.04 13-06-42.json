@@ -1,0 +1,737 @@
+{
+  "RunId": "e675c4a0-fd89-4dd2-badc-9e78282cd0ef",
+  "Context": {
+    "FrameCount": 300,
+    "BatchSize": 33,
+    "InputWidth": 704,
+    "InputHeight": 1280,
+    "TargetResolution": 1080,
+    "Host": {
+      "MachineId": 56698,
+      "GpuName": "RTX 3090",
+      "CpuName": "AMD EPYC 7532 32-Core Processor",
+      "CpuCoresEffective": 16,
+      "CpuCoresTotal": 64,
+      "CpuRamGb": 31.411376953125,
+      "DiskBandwidthMbps": 11878.4,
+      "PcieBandwidthGbps": 22.3,
+      "Dlperf": 47.18373476382255
+    }
+  },
+  "Samples": [
+    {
+      "ElapsedSeconds": 2.42e-05,
+      "SignalElapsedSeconds": 0,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": 1038.0989806
+    },
+    {
+      "ElapsedSeconds": 0.0046366,
+      "SignalElapsedSeconds": 0,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1038.0989806
+    },
+    {
+      "ElapsedSeconds": 15.9179544,
+      "SignalElapsedSeconds": 15.9179544,
+      "Percent": 2,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1008.053534
+    },
+    {
+      "ElapsedSeconds": 17.6978368,
+      "SignalElapsedSeconds": 15.3089307,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 997.1735542
+    },
+    {
+      "ElapsedSeconds": 33.9242392,
+      "SignalElapsedSeconds": 33.9242392,
+      "Percent": 4,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1008.5458792
+    },
+    {
+      "ElapsedSeconds": 35.279414,
+      "SignalElapsedSeconds": 33.3096559,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1005.3608874
+    },
+    {
+      "ElapsedSeconds": 51.9503507,
+      "SignalElapsedSeconds": 51.9503507,
+      "Percent": 6,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1005.8194487
+    },
+    {
+      "ElapsedSeconds": 52.9180489,
+      "SignalElapsedSeconds": 51.3413919,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1003.578938
+    },
+    {
+      "ElapsedSeconds": 70.005238,
+      "SignalElapsedSeconds": 70.005238,
+      "Percent": 8,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1003.5104915
+    },
+    {
+      "ElapsedSeconds": 70.6259869,
+      "SignalElapsedSeconds": 69.3700294,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1001.9068089
+    },
+    {
+      "ElapsedSeconds": 88.0571252,
+      "SignalElapsedSeconds": 88.0571252,
+      "Percent": 10,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1001.5460669
+    },
+    {
+      "ElapsedSeconds": 88.3549859,
+      "SignalElapsedSeconds": 87.4377885,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1000.4549725
+    },
+    {
+      "ElapsedSeconds": 106.1342703,
+      "SignalElapsedSeconds": 106.1342703,
+      "Percent": 12,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1000.0536084
+    },
+    {
+      "ElapsedSeconds": 106.4108718,
+      "SignalElapsedSeconds": 105.5118132,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 999.2965851
+    },
+    {
+      "ElapsedSeconds": 124.1995597,
+      "SignalElapsedSeconds": 124.1995597,
+      "Percent": 13,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 1042.0112147
+    },
+    {
+      "ElapsedSeconds": 126.3956914,
+      "SignalElapsedSeconds": 123.5824306,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 1041.4803862
+    },
+    {
+      "ElapsedSeconds": 142.2576004,
+      "SignalElapsedSeconds": 142.2576004,
+      "Percent": 16,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 987.5785915
+    },
+    {
+      "ElapsedSeconds": 143.8504648,
+      "SignalElapsedSeconds": 141.6427075,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 987.2134397
+    },
+    {
+      "ElapsedSeconds": 160.3433017,
+      "SignalElapsedSeconds": 160.3433017,
+      "Percent": 18,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 990.1001212
+    },
+    {
+      "ElapsedSeconds": 161.3952509,
+      "SignalElapsedSeconds": 159.709634,
+      "Percent": null,
+      "Phase": "Encoding",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 989.8619645
+    },
+    {
+      "ElapsedSeconds": 178.3977845,
+      "SignalElapsedSeconds": 178.3977845,
+      "Percent": 20,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 991.5635774
+    },
+    {
+      "ElapsedSeconds": 178.9385371,
+      "SignalElapsedSeconds": 177.8362917,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": 957.5000252
+    },
+    {
+      "ElapsedSeconds": 178.9466091,
+      "SignalElapsedSeconds": 177.9006069,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 957.5000252
+    },
+    {
+      "ElapsedSeconds": 190.5938428,
+      "SignalElapsedSeconds": 190.5938428,
+      "Percent": 22,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 932.9494926
+    },
+    {
+      "ElapsedSeconds": 191.5792013,
+      "SignalElapsedSeconds": 189.966881,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 913.8357043
+    },
+    {
+      "ElapsedSeconds": 201.6646771,
+      "SignalElapsedSeconds": 201.6646771,
+      "Percent": 25,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 872.7118219
+    },
+    {
+      "ElapsedSeconds": 203.9876668,
+      "SignalElapsedSeconds": 201.0519341,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 858.3522837
+    },
+    {
+      "ElapsedSeconds": 212.755282,
+      "SignalElapsedSeconds": 212.755282,
+      "Percent": 27,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 853.9002642
+    },
+    {
+      "ElapsedSeconds": 214.2974086,
+      "SignalElapsedSeconds": 212.1212027,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 843.581819
+    },
+    {
+      "ElapsedSeconds": 223.9349584,
+      "SignalElapsedSeconds": 223.9349584,
+      "Percent": 30,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 820.0126703
+    },
+    {
+      "ElapsedSeconds": 224.6797884,
+      "SignalElapsedSeconds": 223.3124005,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 812.5427534
+    },
+    {
+      "ElapsedSeconds": 234.9792686,
+      "SignalElapsedSeconds": 234.9792686,
+      "Percent": 32,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 813.1440783
+    },
+    {
+      "ElapsedSeconds": 237.1785191,
+      "SignalElapsedSeconds": 234.3688013,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 807.6760991
+    },
+    {
+      "ElapsedSeconds": 246.0451924,
+      "SignalElapsedSeconds": 246.0451924,
+      "Percent": 35,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 788.6661878
+    },
+    {
+      "ElapsedSeconds": 247.2003644,
+      "SignalElapsedSeconds": 245.4258352,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 784.7164692
+    },
+    {
+      "ElapsedSeconds": 257.0827411,
+      "SignalElapsedSeconds": 257.0827411,
+      "Percent": 37,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 787.2801546
+    },
+    {
+      "ElapsedSeconds": 259.6578221,
+      "SignalElapsedSeconds": 256.4671856,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 784.3934986
+    },
+    {
+      "ElapsedSeconds": 268.1918723,
+      "SignalElapsedSeconds": 268.1918723,
+      "Percent": 40,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 767.2105855
+    },
+    {
+      "ElapsedSeconds": 269.8767077,
+      "SignalElapsedSeconds": 267.5650156,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 765.1306806
+    },
+    {
+      "ElapsedSeconds": 279.2874955,
+      "SignalElapsedSeconds": 279.2874955,
+      "Percent": 42,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 768.7415896
+    },
+    {
+      "ElapsedSeconds": 279.9659969,
+      "SignalElapsedSeconds": 278.6657166,
+      "Percent": null,
+      "Phase": "DiTUpscaling",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 767.2242044
+    },
+    {
+      "ElapsedSeconds": 290.4179085,
+      "SignalElapsedSeconds": 290.4179085,
+      "Percent": 45,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 750.54187
+    },
+    {
+      "ElapsedSeconds": 292.49613,
+      "SignalElapsedSeconds": 289.7805206,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": 679.1623382
+    },
+    {
+      "ElapsedSeconds": 292.4961702,
+      "SignalElapsedSeconds": 289.833633,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 679.1623382
+    },
+    {
+      "ElapsedSeconds": 332.8198569,
+      "SignalElapsedSeconds": 332.8198569,
+      "Percent": 50,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 703.5355697
+    },
+    {
+      "ElapsedSeconds": 333.1424473,
+      "SignalElapsedSeconds": 332.1892586,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 698.2735472
+    },
+    {
+      "ElapsedSeconds": 375.1222961,
+      "SignalElapsedSeconds": 375.1222961,
+      "Percent": 55,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 721.7641034
+    },
+    {
+      "ElapsedSeconds": 377.1012994,
+      "SignalElapsedSeconds": 374.5037954,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 718.0985478
+    },
+    {
+      "ElapsedSeconds": 417.4127894,
+      "SignalElapsedSeconds": 417.4127894,
+      "Percent": 60,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 737.5753661
+    },
+    {
+      "ElapsedSeconds": 419.9875967,
+      "SignalElapsedSeconds": 416.7944197,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 735.0471629
+    },
+    {
+      "ElapsedSeconds": 459.7523733,
+      "SignalElapsedSeconds": 459.7523733,
+      "Percent": 65,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 749.2974823
+    },
+    {
+      "ElapsedSeconds": 460.0813726,
+      "SignalElapsedSeconds": 459.099661,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 747.5855704
+    },
+    {
+      "ElapsedSeconds": 502.0155372,
+      "SignalElapsedSeconds": 502.0155372,
+      "Percent": 70,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 757.0126461
+    },
+    {
+      "ElapsedSeconds": 503.1060692,
+      "SignalElapsedSeconds": 501.398631,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 755.858885
+    },
+    {
+      "ElapsedSeconds": 544.328865,
+      "SignalElapsedSeconds": 544.328865,
+      "Percent": 75,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 762.329491
+    },
+    {
+      "ElapsedSeconds": 545.8862911,
+      "SignalElapsedSeconds": 543.7105189,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 761.5676978
+    },
+    {
+      "ElapsedSeconds": 586.6844382,
+      "SignalElapsedSeconds": 586.6844382,
+      "Percent": 80,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 766.4937817
+    },
+    {
+      "ElapsedSeconds": 589.1764153,
+      "SignalElapsedSeconds": 586.0350565,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 765.99999
+    },
+    {
+      "ElapsedSeconds": 628.9417373,
+      "SignalElapsedSeconds": 628.9417373,
+      "Percent": 85,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 770.1342634
+    },
+    {
+      "ElapsedSeconds": 629.5927248,
+      "SignalElapsedSeconds": 628.3234462,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 769.812908
+    },
+    {
+      "ElapsedSeconds": 671.2393626,
+      "SignalElapsedSeconds": 671.2393626,
+      "Percent": 90,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 773.9948721
+    },
+    {
+      "ElapsedSeconds": 672.5262191,
+      "SignalElapsedSeconds": 670.6187842,
+      "Percent": null,
+      "Phase": "VaeDecoding",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 773.7970516
+    },
+    {
+      "ElapsedSeconds": 713.5632526,
+      "SignalElapsedSeconds": 713.5632526,
+      "Percent": 95,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 778.2141252
+    },
+    {
+      "ElapsedSeconds": 715.936697,
+      "SignalElapsedSeconds": 715.936697,
+      "Percent": 96,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 768.0975803
+    },
+    {
+      "ElapsedSeconds": 716.0530301,
+      "SignalElapsedSeconds": 712.9736279,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 1,
+      "BatchCount": 0,
+      "EstimatedTotalSeconds": 781.9605627
+    },
+    {
+      "ElapsedSeconds": 716.0530565,
+      "SignalElapsedSeconds": 712.9736811,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 1,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 781.9605627
+    },
+    {
+      "ElapsedSeconds": 716.0530617,
+      "SignalElapsedSeconds": 714.1696381,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 2,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 781.3104955
+    },
+    {
+      "ElapsedSeconds": 718.321766,
+      "SignalElapsedSeconds": 718.321766,
+      "Percent": 97,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 775.3317325
+    },
+    {
+      "ElapsedSeconds": 718.515384,
+      "SignalElapsedSeconds": 715.3175381,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 3,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 774.8723101
+    },
+    {
+      "ElapsedSeconds": 718.5154016,
+      "SignalElapsedSeconds": 716.4955071,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 4,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 774.5277432
+    },
+    {
+      "ElapsedSeconds": 720.6338871,
+      "SignalElapsedSeconds": 720.6338871,
+      "Percent": 98,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 770.5160948
+    },
+    {
+      "ElapsedSeconds": 720.9872779,
+      "SignalElapsedSeconds": 717.6871501,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 5,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 770.2734916
+    },
+    {
+      "ElapsedSeconds": 720.9872954,
+      "SignalElapsedSeconds": 718.8854531,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 6,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 770.0915392
+    },
+    {
+      "ElapsedSeconds": 720.987299,
+      "SignalElapsedSeconds": 720.0162521,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 7,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 769.9550749
+    },
+    {
+      "ElapsedSeconds": 722.9409215,
+      "SignalElapsedSeconds": 722.9409215,
+      "Percent": 99,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 767.162441
+    },
+    {
+      "ElapsedSeconds": 723.4895817,
+      "SignalElapsedSeconds": 721.1895022,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 8,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 767.0667676
+    },
+    {
+      "ElapsedSeconds": 723.4896016,
+      "SignalElapsedSeconds": 722.3233952,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 9,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 766.9950126
+    },
+    {
+      "ElapsedSeconds": 725.273383,
+      "SignalElapsedSeconds": 725.273383,
+      "Percent": 100,
+      "Phase": "Unknown",
+      "BatchIndex": null,
+      "BatchCount": null,
+      "EstimatedTotalSeconds": 764.6423791
+    },
+    {
+      "ElapsedSeconds": 725.9502761,
+      "SignalElapsedSeconds": 723.4821102,
+      "Percent": null,
+      "Phase": "PostProcessing",
+      "BatchIndex": 10,
+      "BatchCount": 10,
+      "EstimatedTotalSeconds": 764.5923175
+    }
+  ],
+  "ProcessingCompletedSeconds": 725.273383,
+  "ActualTotalSeconds": 739.2348551,
+  "Succeeded": true
+}

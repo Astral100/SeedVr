@@ -34,7 +34,8 @@ namespace SeedVr.Remote.HttpClients
 
             var completedResult = await TrackLiveProgress(comfyUiAddress, wrapperAddress, requestId, tracker, cancellationToken);
             var trace = tracker.Complete(completedResult != null);
-            EstimatorTraceStore.SaveForPrompt(requestId, trace);
+            trace.RunId = requestId;
+            EstimatorTraceStore.SaveSnapshot(trace);
             return completedResult;
         }
 

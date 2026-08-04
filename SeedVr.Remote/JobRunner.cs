@@ -38,7 +38,7 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Uploads, builds and submits the workflow to ComfyUI over the raw protocol.</summary>
-        public async Task<bool> StartRawJob(string comfyUiAddress, string jupyterAddress, string jupyterToken, CancellationToken cancellationToken)
+        public async Task<bool> StartRawJob(string comfyUiAddress, string jupyterAddress, string jupyterToken, HostProfile hostProfile, CancellationToken cancellationToken)
         {
             var jobRequest = GetJobRequest();
             if (jobRequest == null)
@@ -63,7 +63,7 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution);
+            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution, hostProfile);
 
             ComfyUiHistoryEntry completedEntry;
             try
@@ -102,19 +102,19 @@ namespace SeedVr.Remote
         }
 
         /// <summary>Builds the estimators' job context from local metadata, or an empty context that SeedVR2 startup logs can complete.</summary>
-        private JobProgressContext GetProgressContext(VideoMetadata videoMetadata, int batchSize, int targetResolution)
+        private JobProgressContext GetProgressContext(VideoMetadata videoMetadata, int batchSize, int targetResolution, HostProfile hostProfile)
         {
             if (videoMetadata == null)
             {
                 Log.Warning("Fast local video metadata is unavailable; ETA will initialize when SeedVR2 reports the input dimensions.");
-                return new JobProgressContext(0, batchSize, 0, 0, targetResolution);
+                return new JobProgressContext(0, batchSize, 0, 0, targetResolution, hostProfile);
             }
 
-            return new JobProgressContext(videoMetadata.FrameCount, batchSize, videoMetadata.Width, videoMetadata.Height, targetResolution);
+            return new JobProgressContext(videoMetadata.FrameCount, batchSize, videoMetadata.Width, videoMetadata.Height, targetResolution, hostProfile);
         }
 
         /// <summary>Uploads through raw ComfyUI, then submits the same workflow to the on-instance API wrapper instead of /prompt.</summary>
-        public async Task<bool> StartWrapperJob(string comfyUiAddress, string wrapperAddress, string jupyterAddress, string jupyterToken, CancellationToken cancellationToken)
+        public async Task<bool> StartWrapperJob(string comfyUiAddress, string wrapperAddress, string jupyterAddress, string jupyterToken, HostProfile hostProfile, CancellationToken cancellationToken)
         {
             var jobRequest = GetJobRequest();
             if (jobRequest == null)
@@ -139,7 +139,7 @@ namespace SeedVr.Remote
                 return false;
             }
 
-            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution);
+            var progressContext = GetProgressContext(videoMetadata, workflow.Upscaler.Inputs.BatchSize, workflow.Upscaler.Inputs.Resolution, hostProfile);
 
             WrapperResult completedResult;
             try

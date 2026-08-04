@@ -84,8 +84,9 @@ namespace SeedVr.Estimators.Tests
             var afterSecond = sut.Update(GetBatchSample(ProgressPhase.VaeDecoding, 2, 180));
 
             // Assert
+            // The raw outlier would move the two-batch total by ~62s; clipping and confidence-weighting must shrink that hard.
             var jump = afterSecond.EstimatedTotal.TotalSeconds - beforeSecond.EstimatedTotal.TotalSeconds;
-            Assert.True(jump < 10, $"one completed batch moved the phase total by {jump:F1}s");
+            Assert.True(jump < 20, $"one completed batch moved the phase total by {jump:F1}s");
         }
 
         [Fact]

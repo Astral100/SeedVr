@@ -96,7 +96,7 @@ namespace SeedVr.Estimators.Live
 
                 EnsureStarted();
                 var currentContext = _trace.Context;
-                var context = new JobProgressContext(metadata.FrameCount, currentContext.BatchSize, metadata.Width, metadata.Height, currentContext.TargetResolution);
+                var context = new JobProgressContext(metadata.FrameCount, currentContext.BatchSize, metadata.Width, metadata.Height, currentContext.TargetResolution, currentContext.Host);
                 _trace.Context = context;
                 _estimator = AdaptiveHybridEstimator.FromContext(context);
                 WarmEstimatorFromHistory();

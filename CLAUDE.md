@@ -33,6 +33,7 @@
 - Commit all pending changes in one commit, even unrelated ones, unless told otherwise.
 - Always push after committing. Do not wait to be asked. This applies only to commits already asked for; it is not licence to create one.
 - Do not prefix shell commands with `cd` or `Set-Location`. Use absolute paths where a path is needed.
+- Run every destructive file operation (delete, overwrite, clear) as its own command with `-LiteralPath`, never inside a compound command line.
 
 ## Documents
 

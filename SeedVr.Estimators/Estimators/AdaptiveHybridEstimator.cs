@@ -10,6 +10,7 @@ namespace SeedVr.Estimators.Estimators
         private readonly PhaseBatchEstimator _phaseEstimator;
         private readonly NaiveLinearEstimator _naiveEstimator;
         private readonly PercentDemaEstimator _demaEstimator;
+        private readonly double _fixedFinalizationSeconds;
         private double? _latestPercent;
 
         public AdaptiveHybridEstimator(JobWorkload workload)
@@ -17,6 +18,7 @@ namespace SeedVr.Estimators.Estimators
             _phaseEstimator = new PhaseBatchEstimator(workload);
             _naiveEstimator = new NaiveLinearEstimator(workload);
             _demaEstimator = new PercentDemaEstimator(workload);
+            _fixedFinalizationSeconds = workload.FinalizationSeconds;
         }
 
         /// <summary>Builds the estimator for a job context, deriving its workload once.</summary>
@@ -54,9 +56,14 @@ namespace SeedVr.Estimators.Estimators
                 liveTotalSeconds = (liveTotalSeconds + demaEstimate.EstimatedTotal.TotalSeconds) / 2;
             }
 
+            // The live estimators carry the fixed reference-host finalization allowance; swap it for the host-adapted one.
+            liveTotalSeconds += _phaseEstimator.GetAdaptedFinalizationSeconds() - _fixedFinalizationSeconds;
+
+            // The band scales with the run: an absolute allowance that suits a 200s run silences the live evidence on a 1000s one.
             var phaseTotalSeconds = phaseEstimate.EstimatedTotal.TotalSeconds;
-            var minimumSeconds = phaseTotalSeconds - Constants.HybridMaximumDeviationSeconds;
-            var maximumSeconds = phaseTotalSeconds + Constants.HybridMaximumDeviationSeconds;
+            var deviationSeconds = Math.Max(Constants.HybridDeviationFloorSeconds, Constants.HybridDeviationFraction * phaseTotalSeconds);
+            var minimumSeconds = phaseTotalSeconds - deviationSeconds;
+            var maximumSeconds = phaseTotalSeconds + deviationSeconds;
             liveTotalSeconds = Math.Clamp(liveTotalSeconds, minimumSeconds, maximumSeconds);
             var progress = _latestPercent.Value / 100.0;
             var liveWeight = Constants.HybridMinimumLiveWeight + progress * (Constants.HybridMaximumLiveWeight - Constants.HybridMinimumLiveWeight);

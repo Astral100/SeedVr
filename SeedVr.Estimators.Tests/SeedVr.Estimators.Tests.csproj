@@ -21,4 +21,8 @@
     <ProjectReference Include="..\SeedVr.Estimators\SeedVr.Estimators.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Traces\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

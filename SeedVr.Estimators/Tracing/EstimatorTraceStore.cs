@@ -13,18 +13,20 @@ namespace SeedVr.Estimators.Tracing
             Converters = { new JsonStringEnumConverter() }
         };
 
-        /// <summary>Saves a completed run under the conventional logs/estimator-{promptId}.json path,
-        /// warning rather than throwing so a diagnostics write cannot fail an otherwise finished job.</summary>
-        public static void SaveForPrompt(string promptId, EstimatorRunTrace trace)
+        /// <summary>Saves a completed run as a timestamped snapshot under the logs directory ("RunSnapshot 2026.08.04 12-54-02.json"),
+        /// overwriting a same-second file, warning rather than throwing so a diagnostics write cannot fail an otherwise finished job.
+        /// The trace's run id keeps the snapshot correlatable with log lines and /history.</summary>
+        public static void SaveSnapshot(EstimatorRunTrace trace)
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), Constants.TraceDirectory, $"estimator-{promptId}.json");
+            var fileName = $"{Constants.SnapshotFilePrefix} {DateTime.Now.ToString(Constants.SnapshotTimestampFormat)}.json";
+            var path = Path.Combine(Directory.GetCurrentDirectory(), Constants.TraceDirectory, fileName);
             try
             {
                 Save(trace, path);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Log.Warning(ex, $"The estimator replay trace could not be saved to {path}.");
+                Log.Warning(ex, $"The estimator run snapshot could not be saved to {path}.");
             }
         }
 

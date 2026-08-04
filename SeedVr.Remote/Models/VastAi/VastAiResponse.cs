@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SeedVr.Estimators.Jobs;
 using SeedVr.Remote;
 
 namespace SeedVr.Remote.Models.VastAi
@@ -28,6 +29,46 @@ namespace SeedVr.Remote.Models.VastAi
         /// <summary>Null unless the instance is running.</summary>
         [JsonPropertyName("ports")]
         public VastAiPorts Ports { get; set; }
+
+        /// <summary>The physical machine behind the instance; the stable key for anything learned about a host.</summary>
+        [JsonPropertyName("machine_id")]
+        public int MachineId { get; set; }
+
+        [JsonPropertyName("gpu_name")]
+        public string GpuName { get; set; }
+
+        [JsonPropertyName("cpu_name")]
+        public string CpuName { get; set; }
+
+        /// <summary>The cores actually allotted to this rental; the machine's full core count is shared between tenants.</summary>
+        [JsonPropertyName("cpu_cores_effective")]
+        public double CpuCoresEffective { get; set; }
+
+        [JsonPropertyName("cpu_cores")]
+        public int CpuCoresTotal { get; set; }
+
+        /// <summary>The whole machine's RAM; the rental's share is the cores-proportional slice of it.</summary>
+        [JsonPropertyName("cpu_ram")]
+        public double CpuRamMb { get; set; }
+
+        [JsonPropertyName("disk_bw")]
+        public double DiskBandwidthMbps { get; set; }
+
+        [JsonPropertyName("pcie_bw")]
+        public double PcieBandwidthGbps { get; set; }
+
+        /// <summary>Vast.ai's measured deep-learning benchmark score for the machine's GPU.</summary>
+        [JsonPropertyName("dlperf")]
+        public double Dlperf { get; set; }
+
+        /// <summary>The machine fingerprint the estimators record with each run. RAM is the rental's allotment, not the machine
+        /// total: the API only reports the whole machine's RAM, and the instance's share is cores-proportional (matching the
+        /// instance card's number).</summary>
+        public HostProfile GetHostProfile()
+        {
+            var allottedRamMb = CpuCoresTotal > 0 ? CpuRamMb * CpuCoresEffective / CpuCoresTotal : CpuRamMb;
+            return new HostProfile(MachineId, GpuName, CpuName, CpuCoresEffective, CpuCoresTotal, allottedRamMb / 1024, DiskBandwidthMbps, PcieBandwidthGbps, Dlperf);
+        }
 
         /// <summary>The host port ComfyUI is published on, or null when the instance has not published it yet.</summary>
         public string GetComfyUiHostPort()
