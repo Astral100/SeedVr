@@ -40,3 +40,17 @@
 - Plan and design documents hold decisions and actions only. Rationale belongs in the conversation.
 - Do not describe things that can be read from the code. Descriptions go stale; conventions do not.
 - Promote anything durable from a plan-mode plan into `PLAN.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues (`Astral100/SeedVr`), managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles use their default label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
