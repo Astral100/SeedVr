@@ -51,6 +51,10 @@ output. Without an `s3` config the wrapper returns file references, not the byte
 | 5 | Download the result | Done, both paths verified live 03/08/2026 |
 | 6 | Remote cleanup and cancellation | Done, both paths verified live 04/08/2026 |
 | 7 | Timeouts and progress reporting | Done, stall paths verified live 04/08/2026 |
+| 8 | SeedVR parameter surface | Next |
+| 9 | Parameter-aware ETA estimation | Planned, after 8 |
+| 10 | Output encoding exploration | Potential, research needed |
+| 11 | Workflow experimentation | Planned, last |
 
 ## Milestone 3 - patch, upload, submit
 
@@ -170,6 +174,37 @@ The control calls (`GetSystemStats`, `GetComfyUiQueueLength`, `GetInstalledModel
 - The courtesy socket close runs on its own 5s deadline (`SocketCloseTimeoutSeconds`), so a hung or already-cancelled connection cannot stall the unwind.
 - The wrapper `/result` percent is recorded only when it changes (closes the 4b to-do): the 3s poll no longer replays identical percents into the rate-based estimators as slowdowns.
 - Both stall paths verified live 04/08/2026 by freezing the instance's ComfyUI python process (`pkill -STOP`) mid-generation at a 60s test timeout. Raw (prompt `f1bb3893`): the deadline fired exactly 60s after the last progress frame, the `/interrupt` timed out with a warning against the frozen server, recovery gave up at its 120s deadline and the run failed cleanly. Wrapper (request `0e1a3e10`): `/result` kept answering with an unmoving percent, the deadline fired at 60s, `/cancel` succeeded (the wrapper stayed alive) and the run failed cleanly. A frozen server makes each failed queue ping cost the full 30s control timeout, so the recovery's 120s deadline bails before the 5-failed-pings streak - same outcome, expected. A healthy 60s-armed run also completed with no false fire.
+
+## Milestone 8 - SeedVR parameter surface
+
+One typed, grouped parameter model — the future serverless request payload. Spec: issue #1; tickets #2 (skeleton), #3 (value parameters, blocked by #2), #4 (compile node, blocked by #2). Decisions settled 07/08/2026:
+
+- Sources, most general first: built-in defaults (today's template values) -> job JSON file -> appsettings overrides. Appsettings wins; every applied override is logged at job start; override properties are nullable value types so "not set" is distinguishable.
+- An omitted parameter means today's template value; defaults live in one place.
+- Exposure criterion (trim settled 07/08/2026): a parameter is exposed only if its best value is genuinely unknown (content-, taste- or instance-dependent); README-settled values stay frozen. 11 fields.
+- Structural groups (nested blocks in the job file, one class per group):
+  - Quality: DiT model, `resolution`.
+  - Performance: `batch_size`, torch compile `enabled` (the compile settings node is wired into the graph only when enabled; mode stays default).
+  - MemoryFit: `blocks_to_swap`, `offload_device` (one field, `cpu`/`none`, applied to the DiT/VAE/tensor offload points), VAE `encode_tiled`/`decode_tiled` toggles.
+  - Output: `bit_depth` (default: matched to the source via the existing ffprobe), `crf` (default 16; today's runs encode at the implicit CRF 23).
+  - ExperimentControl: `seed`, `enable_debug`.
+- Frozen (not exposed, current or README-recommended values): `temporal_overlap` (3), `uniform_batch_size` (true), `color_correction` (lab), `attention_mode` (sdpa; auto-selection per GPU is a possible follow-up), `swap_io_components` (false), tile sizes/overlaps, `prepend_frames`, `input_noise_scale`/`latent_noise_scale`, `max_resolution`, `tile_debug`, `cache_model` (false; one job per instance), compile mode/backend/dynamo/`fullgraph` knobs, VAE model, container/codec (core nodes are mp4/h264 only). Promoting a frozen parameter later is a small routine change.
+- Validation rejects before submit, with a logged reason: `batch_size` must be 4n+1; `blocks_to_swap` <= 32 (3B) / 36 (7B), nonzero requires `offload_device` = `cpu`; `resolution` capped at 4K; `crf` 0-51; `bit_depth` 8 or 10; enum fields among accepted options.
+- The effective parameter set is recorded into the run snapshot/trace. Experiment runs are not promoted into the trace regression corpus.
+- Presets are saved job files; the request only ever carries raw parameters (see CONTEXT.md).
+- ETA impact accepted for now: estimator margins widen under non-reference settings; tightening is milestone 9.
+
+## Milestone 9 - parameter-aware ETA estimation
+
+- Extend the estimators to take the recorded effective parameter set into account explicitly (model variant, block swap, tiling, compile), tightening margins as recorded runs accumulate.
+
+## Milestone 10 - output encoding exploration (potential)
+
+- Explore smaller/faster 4K delivery: VideoHelperSuite's Video Combine with NVENC h265, or software h265. Needs research; requires a Vast template update to install the custom node.
+
+## Milestone 11 - workflow experimentation
+
+- Experiment with the workflow graph itself — alternative nodes and wiring, not just parameter values.
 
 ## Open decisions
 
